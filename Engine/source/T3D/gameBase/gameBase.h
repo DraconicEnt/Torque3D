@@ -47,6 +47,9 @@
 #ifndef _IDISPLAYDEVICE_H_
 #include "platform/output/IDisplayDevice.h"
 #endif
+#ifndef _MOVEMANAGER_H_
+#include "T3D/gameBase/moveManager.h"
+#endif
 
 class NetConnection;
 class ProcessList;
@@ -225,8 +228,9 @@ protected:
 #ifdef TORQUE_DEBUG_NET_MOVES
    U32 mLastMoveId;
    U32 mTicksSinceLastMove;
+#endif
    bool mIsAiControlled;
-#endif   
+
 
 public:
 
@@ -305,7 +309,7 @@ public:
    /// @}
 
    // ProcessObject override
-   void processTick( const Move *move ); 
+   void processTick( const Move *move );
 
    /// @name GameBase NetFlags & Hifi-Net Interface   
    /// @{
@@ -434,10 +438,20 @@ public:
    /// Returns the water object we are colliding with, it is up to derived
    /// classes to actually set this object.
    virtual WaterObject* getCurrentWaterObject() { return mCurrentWaterObject; }
-   
-   #ifdef TORQUE_DEBUG_NET_MOVES
-   bool isAIControlled() const { return mIsAiControlled; }
-   #endif
+
+   bool isAIControlled() const
+   {
+       if (getControllingClient())
+       {
+           return false;
+       }
+       return mIsAiControlled;
+   }
+   void setAIControlled(bool controlled) { mIsAiControlled = controlled; }
+   virtual bool    getAIMove(Move*);
+   virtual void aiAimAtLocation(const Point3F& location);
+
+   Point3F mAIAimLocation;
 
    DECLARE_CONOBJECT (GameBase );
 

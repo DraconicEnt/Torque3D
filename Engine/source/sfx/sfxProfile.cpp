@@ -82,7 +82,8 @@ ConsoleDocClass( SFXProfile,
 //-----------------------------------------------------------------------------
 
 SFXProfile::SFXProfile()
-   : mPreload( false )
+   : mPreload( false ),
+     mFilename(StringTable->EmptyString())
 {
 }
 

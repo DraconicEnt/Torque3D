@@ -252,8 +252,8 @@ GameBase::GameBase()
 #ifdef TORQUE_DEBUG_NET_MOVES
    mLastMoveId = 0;
    mTicksSinceLastMove = 0;
-   mIsAiControlled = false;
 #endif
+   mIsAiControlled = false;
    mCameraFov = 90.f;
 }
 
@@ -403,6 +403,22 @@ void GameBase::processTick(const Move * move)
       mTicksSinceLastMove=0;
    }
 #endif
+}
+
+bool GameBase::getAIMove(Move* move)
+{
+    if (isAIControlled())
+    {
+        Move aiMove = NullMove;
+        *move = aiMove;
+        return true;
+    }
+    return false;
+}
+
+void GameBase::aiAimAtLocation(const Point3F& location)
+{
+    mAIAimLocation = location;
 }
 
 void GameBase::interpolateTick(F32 dt)
@@ -791,6 +807,19 @@ DefineEngineMethod(GameBase, attachChild, bool, (GameBase* _subObject), (nullAsT
    }
 }
 
+DefineEngineMethod(GameBase, setAIControlled, void, (bool enabled),, "(bool aiControlled)"
+                                                                                 "Enables or disables AI logic to run on this object.")
+{
+    object->setAIControlled(enabled);
+}
+
+DefineEngineMethod( GameBase, aiAimAtLocation, void, ( Point3F location ),,
+                    "@brief When AI controlled, instructs the AI to aim at this location.\n\n"
+
+                    "@param location World point to aim at.\n")
+{
+    object->aiAimAtLocation(location);
+}
 
 DefineEngineMethod(GameBase, detachChild, bool, (GameBase* _subObject), (nullAsType<GameBase*>()), "(SceneObject subObject)"
               "attach an object to this one, preserving its present transform.")

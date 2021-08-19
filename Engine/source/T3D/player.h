@@ -608,6 +608,8 @@ protected:
    ///Update the movement
    virtual void updateMove(const Move *move);
 
+   bool getAIMove(Move* outMove) override;
+
    ///Interpolate movement
    Point3F _move( const F32 travelTime, Collision *outCol );
    F32 _doCollisionImpact( const Collision *collision, bool fallingCollision);
@@ -749,7 +751,6 @@ public:
    virtual Point3F getMomentum() const;
    virtual void    setMomentum(const Point3F &momentum);
    virtual bool    displaceObject(const Point3F& displaceVector);
-   virtual bool    getAIMove(Move*);
 
    bool checkDismountPosition(const MatrixF& oldPos, const MatrixF& newPos);  ///< Is it safe to dismount here?
 
@@ -775,6 +776,7 @@ public:
    virtual void processTick(const Move *move);
    void interpolateTick(F32 delta);
    void advanceTime(F32 dt);
+
    bool castRay(const Point3F &start, const Point3F &end, RayInfo* info);
    bool buildPolyList(PolyListContext context, AbstractPolyList* polyList, const Box3F &box, const SphereF &sphere);
    void buildConvex(const Box3F& box, Convex* convex);

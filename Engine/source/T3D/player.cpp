@@ -2049,6 +2049,40 @@ ShapeBase* Player::getControlObject()
    return mControlObject;
 }
 
+bool Player::getAIMove(Move* move)
+{
+    if (isAIControlled())
+    {
+        Move aiMove = NullMove;
+
+        // Retrieve aim location
+        MatrixF eyeTransform;
+        getEyeTransform(&eyeTransform);
+
+        Point3F forwardVector = eyeTransform.getForwardVector();
+        const float facingDirection = mAtan2(forwardVector.y, forwardVector.x);
+
+        // What is the target position relative to us?
+        Point3F relativeAimLocation = mAIAimLocation - getPosition();
+        relativeAimLocation.normalize();
+
+        // Determine how much yaw is necessary to face the specified direction
+        const float relativeAimDirection = mAtan2(relativeAimLocation.y, relativeAimLocation.x);
+        const float relativeAimDirectionOffset = facingDirection - relativeAimDirection;
+
+        aiMove.yaw = relativeAimDirectionOffset;
+
+        // Determine how much pitch is necessary to face the specified direction
+        Point3F up = eyeTransform.getUpVector();
+        F32 dotPitch = mDot( up, relativeAimLocation );
+        aiMove.pitch = -dotPitch;
+
+        *move = aiMove;
+        return true;
+    }
+    return false;
+}
+
 void Player::processTick(const Move* move)
 {
    PROFILE_SCOPE(Player_ProcessTick);
@@ -2287,11 +2321,6 @@ void Player::advanceTime(F32 dt)
          gCamFXMgr.clear();
       }
    }
-}
-
-bool Player::getAIMove(Move* move)
-{
-   return false;
 }
 
 void Player::setState(ActionState state, U32 recoverTicks)

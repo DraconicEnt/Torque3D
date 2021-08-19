@@ -1499,6 +1499,8 @@ void ShapeBase::processTick(const Move* move)
 
 void ShapeBase::advanceTime(F32 dt)
 {
+    Parent::advanceTime(dt);
+
    // On the client, the shape threads and images are
    // advanced at framerate.
    advanceThreads(dt);
