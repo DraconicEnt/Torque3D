@@ -42,6 +42,10 @@ function AssetBrowser::editShapeAsset(%this, %assetDef)
    ShapeEditorPlugin.openShapeAsset(%assetDef);    
 }
 
+function AssetBrowser::onShapeAssetChanged(%this, %assetDef)
+{
+}
+
 function AssetBrowser::deleteShapeAsset(%this, %assetDef)
 {
    
@@ -318,35 +322,29 @@ function AssetBrowser::buildShapeAssetPreview(%this, %assetDef, %previewData)
                            "Shape File path: " @ %assetDef.getShapeFile();
                            
    if(%this.selectMode)
+   {
       %previewData.doubleClickCommand = "AssetBrowser.selectAsset( AssetBrowser.selectedAsset );";
+   }
    else
-      %previewData.doubleClickCommand = "AssetBrowser.editAsset( "@%assetDef@" );";
+   {
+      if(EditorSettings.value("Assets/Browser/doubleClickAction", "Edit Asset") $= "Edit Asset")
+      {
+         %previewData.doubleClickCommand = "AssetBrowser.editAsset( "@%assetDef@" );";
+      }
+      else
+      {
+         %previewData.doubleClickCommand = "AssetBrowser.onShapeAssetEditorDropped( "@%assetDef@" );";
+      }
+   }
 }
 
 function AssetBrowser::onShapeAssetEditorDropped(%this, %assetDef, %position)
 {
-   //echo("DROPPED A SHAPE ON THE EDITOR WINDOW!"); 
-
-   %targetPosition = EWorldEditor.unproject(%position SPC 1000);
-   %camPos = LocalClientConnection.camera.getPosition();
-   %rayResult = containerRayCast(%camPos, %targetPosition, -1);
-   
-   %pos = EWCreatorWindow.getCreateObjectPosition();
-
-   if(%rayResult != 0)
-   {
-      %pos = getWords(%rayResult, 1, 3);
-   }
-   else
-   {
-      %pos = "0 0 0";  
-   }
-   
    %assetId = %assetDef.getAssetId();
    
    %newStatic = new TSStatic()
    {
-      position = %pos;
+      position = %position;
       shapeAsset = %assetId;
    };
    
@@ -354,9 +352,12 @@ function AssetBrowser::onShapeAssetEditorDropped(%this, %assetDef, %position)
    
    EWorldEditor.clearSelection();
    EWorldEditor.selectObject(%newStatic);
+   
+   EWorldEditor.dropSelection();
       
    EWorldEditor.isDirty = true;
    
+   MECreateUndoAction::submit(%newStatic );
 }
 
 function GuiInspectorTypeShapeAssetPtr::onControlDropped( %this, %payload, %position )
@@ -371,15 +372,15 @@ function GuiInspectorTypeShapeAssetPtr::onControlDropped( %this, %payload, %posi
    
    if(%assetType $= "ShapeAsset")
    {
-      //echo("DROPPED A SHAPE ON A SHAPE ASSET COMPONENT FIELD!");  
-      
       %module = %payload.moduleName;
       %asset = %payload.assetName;
       
-      %targetComponent = %this.targetObject;
-      %targetComponent.shapeAsset = %module @ ":" @ %asset;
+      %oldValue = %this.targetObject.shapeAsset;
+      %arrayIndex = "";
       
-      //Inspector.refresh();
+      %targetObject = %this.targetObject;
+      %targetObject.shapeAsset = %module @ ":" @ %asset;
+
    }
    
    EWorldEditor.isDirty = true;

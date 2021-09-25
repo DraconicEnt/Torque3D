@@ -70,6 +70,12 @@ class MaterialAsset : public AssetBase
 public:
    static StringTableEntry smNoMaterialAssetFallback;
 
+   enum MaterialAssetErrCode
+   {
+      ScriptLoaded = AssetErrCode::Extended,
+      Extended
+   };
+
 public:
    MaterialAsset();
    virtual ~MaterialAsset();
@@ -109,7 +115,11 @@ protected:
    virtual void initializeAsset();
    virtual void onAssetRefresh(void);
 
-   static bool setScriptFile(void *obj, const char *index, const char *data) { static_cast<MaterialAsset*>(obj)->setScriptFile(data); return false; }
+   static bool setScriptFile(void *obj, const char *index, const char *data)
+   {
+      static_cast<MaterialAsset*>(obj)->setScriptFile(data);
+      return false;
+   }
    static const char* getScriptFile(void* obj, const char* data) { return static_cast<MaterialAsset*>(obj)->getScriptFile(); }
 };
 
@@ -164,7 +174,7 @@ public: \
    {\
       if(m##name##AssetId != _in || m##name##Name != _in)\
       {\
-         if (_in == StringTable->EmptyString())\
+         if (_in == NULL || _in == StringTable->EmptyString())\
          {\
             m##name##Name = StringTable->EmptyString();\
             m##name##AssetId = StringTable->EmptyString();\
@@ -227,7 +237,7 @@ public: \
          Con::errorf("%s::_set%s() - material asset failure\"%s\" due to [%s]", macroText(className), macroText(name), _in, MaterialAsset::getAssetErrstrn(m##name##Asset->getStatus()).c_str());\
          return false; \
       }\
-      else if (bool(m##name) == NULL)\
+      else if (!m##name)\
       {\
          Con::errorf("%s::_set%s() - Couldn't load material \"%s\"", macroText(className), macroText(name), _in);\
          return false;\

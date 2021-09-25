@@ -32,7 +32,6 @@ function AssetBrowser_addModuleWindow::onGainFirstResponder(%this)
 function AssetBrowser_addModuleWindow::close()
 {
    Canvas.popDialog(AssetBrowser_addModule);  
-   eval(AssetBrowser_addModuleWindow.callbackFunction);
 }
 
 function AssetBrowser_addModuleWindow::CreateNewModule(%this)
@@ -96,7 +95,7 @@ function AssetBrowser_addModuleWindow::CreateNewModule(%this)
    
    //force a refresh of our modules list
    ModuleDatabase.ignoreLoadedGroups(true);
-   ModuleDatabase.scanModules();
+   ModuleDatabase.registerModule(%moduleFilePath, %newModuleName @ ".module");
    %success = ModuleDatabase.loadExplicit(%newModuleName, 1);
    ModuleDatabase.ignoreLoadedGroups(false);
    
@@ -124,7 +123,13 @@ function AssetBrowserModuleList::refresh(%this)
    %count = getWordCount(%moduleList);
    for(%i=0; %i < %count; %i++)
    {
-      %moduleName = getWord(%moduleList, %i);
-      %this.add(%moduleName.ModuleId, %i);  
+      %moduleDef = getWord(%moduleList, %i);
+      %moduleName = %moduleDef.ModuleId;
+      %this.add(%moduleName, %i);  
    }
+}
+
+function AssetBrowserSelModuleAddBtn::onClick(%this)
+{
+   AssetBrowser.CreateNewModule("AssetBrowser_selectModule.newModuleAdded();");
 }

@@ -1059,7 +1059,6 @@ function MaterialEditorGui::guiSync( %this, %material )
    %this.getRoughChan((%material).RoughnessChan[%layer]);
    %this.getAOChan((%material).AOChan[%layer]);
    %this.getMetalChan((%material).metalChan[%layer]);
-   %this.getGlowChan((%material).glowChan[%layer]);
    %this.preventUndo = false;
 }
 
@@ -1081,11 +1080,7 @@ function MaterialEditorGui::getMetalChan(%this, %channel)
 	%guiElement = metalChanBtn @ %channel;
 	%guiElement.setStateOn(true);
 }
-function MaterialEditorGui::getGlowChan(%this, %channel)
-{
-	%guiElement = glowChanBtn @ %channel;
-	%guiElement.setStateOn(true);
-}
+
 //=======================================
 // Material Update Functionality
 
@@ -1125,18 +1120,17 @@ function MaterialEditorGui::updateActiveMaterial(%this, %propertyField, %value, 
       %action.isSlider = %isSlider;
       %action.onMouseUp = %onMouseUp;
       %action.newValue = %value;
-      eval( "%action.oldValue = " @ MaterialEditorGui.currentMaterial @ "." @ %propertyField @ ";");
-      %action.oldValue = "\"" @ %action.oldValue @ "\"";
+      %action.oldValue = "\"" @ MaterialEditorGui.currentMaterial.getFieldValue(%propertyField) @ "\"";
       MaterialEditorGui.submitUndo( %action );
    }
    
-   eval("materialEd_previewMaterial." @ %propertyField @ " = " @ %value @ ";");
+   materialEd_previewMaterial.setFieldValue(%propertyField, %value);
    materialEd_previewMaterial.flush();
    materialEd_previewMaterial.reload();
    
    if (MaterialEditorGui.livePreview == true)
    {
-      eval("MaterialEditorGui.currentMaterial." @ %propertyField @ " = " @ %value @ ";");
+      MaterialEditorGui.setFieldValue(%propertyField, %value);
       MaterialEditorGui.currentMaterial.flush();
       MaterialEditorGui.currentMaterial.reload();
    }
@@ -1179,7 +1173,7 @@ function MaterialEditorGui::updateMaterialReferences( %this, %obj, %oldName, %ne
          %fieldName = %obj.getField( %i );
          if ( ( %obj.getFieldType( %fieldName ) $= "TypeMaterialName" ) && ( %obj.getFieldValue( %fieldName ) $= %oldName ) )
          {
-            eval( %obj @ "." @ %fieldName @ " = " @ %newName @ ";" );
+            %obj.setFieldValue(%fieldName, %newName);
             %objChanged = true;
          }
       }
@@ -1372,7 +1366,8 @@ function MaterialEditorGui::updateAnimationFlags(%this)
 {
    MaterialEditorGui.setMaterialDirty();
    %single = true;
-   
+   %flags = "";
+
    if(MaterialEditorPropertiesWindow-->RotationAnimation.getValue() == true)
    {
       if(%single == true)
@@ -1436,13 +1431,13 @@ function MaterialEditorGui::updateAnimationFlags(%this)
    %action.oldValue = %oldFlags;
    MaterialEditorGui.submitUndo( %action );
    
-   eval("materialEd_previewMaterial.animFlags[" @ MaterialEditorGui.currentLayer @ "] = " @ %flags @ ";");
+   materialEd_previewMaterial.animFlags[MaterialEditorGui.currentLayer] = %flags;
    materialEd_previewMaterial.flush();
    materialEd_previewMaterial.reload();
    
    if (MaterialEditorGui.livePreview == true)
    {
-      eval("MaterialEditorGui.currentMaterial.animFlags[" @ MaterialEditorGui.currentLayer @ "] = " @ %flags @ ";");
+      MaterialEditorGui.currentMaterial.animFlags[MaterialEditorGui.currentLayer] = %flags;
       MaterialEditorGui.currentMaterial.flush();
       MaterialEditorGui.currentMaterial.reload();
    }
@@ -2044,13 +2039,17 @@ function MaterialEditorGui::pickedNewMaterialTargetModule( %this, %module )
    PE_EmitterEditor.targetModule = %module;
    MaterialEditorGui.defaultMaterialFile = %moduleDef.ModulePath @ "/scripts/managedData/materials." @ $TorqueScriptFileExtension;
 
+   if(!isDirectory(filePath(MaterialEditorGui.defaultMaterialFile)))
+   {
+      AssetBrowser.dirHandler.createFolder(filePath(MaterialEditorGui.defaultMaterialFile));
+   }
+
    %action = %this.createUndo(ActionCreateNewMaterial, "Create New Material");
    %action.object = "";
    
    %material = getUniqueName( "newMaterial" );
    new Material(%material) 
    {
-      diffuseMap[0] = "core/rendering/images/warnmat";
       mapTo = "unmapped_mat";
       parentGroup = RootGroup;
    };
@@ -2325,7 +2324,7 @@ function MaterialEditorGui::changeMaterial(%this, %fromMaterial, %toMaterial)
    {
       %action.mode = "editorShapes";
 
-      eval("MaterialEditorGui.currentObject." @ SubMaterialSelector.getText() @ " = " @ %toMaterial.getName() @ ";");
+      MaterialEditorGui.currentObject.setFieldValue(SubMaterialSelector.getText(), %toMaterial.getName());
       if( MaterialEditorGui.currentObject.isMethod("postApply") )
          MaterialEditorGui.currentObject.postApply();
       
@@ -2420,12 +2419,6 @@ function MaterialEditorGui::setMetalChan(%this, %value)
    MaterialEditorGui.guiSync( materialEd_previewMaterial );
 }
 
-function MaterialEditorGui::setGlowChan(%this, %value)
-{
-   MaterialEditorGui.updateActiveMaterial("glowChan[" @ MaterialEditorGui.currentLayer @ "]", %value);   
-   MaterialEditorGui.guiSync( materialEd_previewMaterial );
-}
-
 function MaterialEditorGui::saveCompositeMap(%this)
 {
     %saveAs = "";
@@ -2454,7 +2447,6 @@ function MaterialEditorGui::saveCompositeMap(%this)
     %roughMap = %material.getRoughMap(%layer);
     %aoMap = %material.getAOMap(%layer);
     %metalMap = %material.getMetalMap(%layer);
-    %glowMap = %material.getGlowMap(%layer);
     
     %roughness = %material.RoughnessChan[%layer];
     %ao = %material.AOChan[%layer];

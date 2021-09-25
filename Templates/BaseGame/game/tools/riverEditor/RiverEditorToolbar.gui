@@ -1,4 +1,4 @@
-%guiContent = new GuiControl(RiverEditorToolbar, EditorGuiGroup) {
+$guiContent = new GuiControl(RiverEditorToolbar, EditorGuiGroup) {
    canSaveDynamicFields = "0";
    internalName = "MeshRoadEditorToolbar";
    Enabled = "1";
@@ -10,7 +10,7 @@
    Extent = "800 32";
    MinExtent = "8 2";
    canSave = "1";
-   Visible = "0";
+   Visible = "1";
    hovertime = "1000";
    
    new GuiTextCtrl() {
