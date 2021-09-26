@@ -29,9 +29,6 @@
 #ifndef _MOVEMANAGER_H_
 #include "T3D/gameBase/moveManager.h"
 #endif
-#ifndef _MOVELIST_H_
-#include "T3D/gameBase/moveList.h"
-#endif
 
 //-----------------------------------------------------------------------------
 
@@ -41,6 +38,8 @@ class AIConnection : public GameConnection, public ITickable
 
 protected:
    Move mMove;
+
+   Point3F mAimLocation;
 
 public:
    AIConnection();
@@ -68,6 +67,8 @@ public:
    /// isProcessingTicks and informs the object of the passage of time.
    /// @param timeDelta Time increment in seconds.
    virtual void advanceTime(F32 timeDelta);
+
+   void setAimLocation(const Point3F& location);
 };
 
 

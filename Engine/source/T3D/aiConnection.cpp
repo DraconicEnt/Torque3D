@@ -22,6 +22,11 @@
 
 #include "T3D/aiConnection.h"
 #include "console/engineAPI.h"
+#include "T3D/vehicles/hoverVehicle.h"
+
+#ifndef _MOVELIST_H_
+#include "T3D/gameBase/moveList.h"
+#endif
 
 IMPLEMENT_CONOBJECT( AIConnection );
 
@@ -120,6 +125,18 @@ void AIConnection::interpolateTick(F32 delta)
 
 void AIConnection::processTick()
 {
+   // Reset move state
+   mMove = NullMove;
+
+   GameBase* controlObject = getControlObject();
+   if (controlObject)
+   {
+      if (controlObject->getClassRep()->getClassName() == HoverVehicle::dynClassRep.getClassName())
+      {
+         Con::errorf("Controlling hover!");
+      }
+   }
+
    // FIXME: Gen moves here based on object type
    mMoveList->pushMove(mMove);
 }
@@ -127,6 +144,11 @@ void AIConnection::processTick()
 void AIConnection::advanceTime(F32 timeDelta)
 {
 
+}
+
+void AIConnection::setAimLocation(const Point3F& location)
+{
+   mAimLocation = location;
 }
 
 
@@ -177,94 +199,12 @@ DefineEngineStringlyVariadicFunction(aiConnect, S32 , 2, 20, "(...)"
 
 
 //-----------------------------------------------------------------------------
-DefineEngineMethod(AIConnection, setMove, void, (const char * field, F32 value), ,"(string field, float value)"
-              "Set a field on the current move.\n\n"
-              "@param   field One of {'x','y','z','yaw','pitch','roll'}\n"
-              "@param   value Value to set field to.")
+DefineEngineMethod(AIConnection, aimAtLocation, void, (Point3F location), ,"(Point3F location)"
+              "Requests that the AI aim at a specific location.\n\n"
+              "@param   location A vector representing the position to aim at.\n")
 {
-   Move move = object->getMove();
-
-   // Ok, a little slow for now, but this is just an example..
-   if (!dStricmp(field,"x"))
-      move.x = mClampF(value,-1,1);
-      else
-   if (!dStricmp(field,"y"))
-      move.y = mClampF(value,-1,1);
-      else
-   if (!dStricmp(field,"z"))
-      move.z = mClampF(value,-1,1);
-      else
-   if (!dStricmp(field,"yaw"))
-      move.yaw = moveClamp(value);
-      else
-   if (!dStricmp(field,"pitch"))
-      move.pitch = moveClamp(value);
-      else
-   if (!dStricmp(field,"roll"))
-      move.roll = moveClamp(value);
-
-   //
-   object->setMove(&move);
+   object->setAimLocation(location);
 }
-
-DefineEngineMethod(AIConnection,getMove,F32, (const char * field), ,"(string field)"
-              "Get the given field of a move.\n\n"
-              "@param field One of {'x','y','z','yaw','pitch','roll'}\n"
-              "@returns The requested field on the current move.")
-{
-   const Move& move = object->getMove();
-   if (!dStricmp(field,"x"))
-      return move.x;
-   if (!dStricmp(field,"y"))
-      return move.y;
-   if (!dStricmp(field,"z"))
-      return move.z;
-   if (!dStricmp(field,"yaw"))
-      return move.yaw;
-   if (!dStricmp(field,"pitch"))
-      return move.pitch;
-   if (!dStricmp(field,"roll"))
-      return move.roll;
-   return 0;
-}
-
-
-DefineEngineMethod(AIConnection,setFreeLook,void,(bool isFreeLook), ,"(bool isFreeLook)"
-              "Enable/disable freelook on the current move.")
-{
-   Move move = object->getMove();
-   move.freeLook = isFreeLook;
-   object->setMove(&move);
-}
-
-DefineEngineMethod(AIConnection, getFreeLook, bool, (), ,"getFreeLook()"
-              "Is freelook on for the current move?")
-{
-   return object->getMove().freeLook;
-}
-
-
-//-----------------------------------------------------------------------------
-
-DefineEngineMethod(AIConnection,setTrigger,void, (S32 idx, bool set), ,"(int trigger, bool set)"
-              "Set a trigger.")
-{
-   if (idx >= 0 && idx < MaxTriggerKeys)  
-   {
-      Move move = object->getMove();
-      move.trigger[idx] = set;
-      object->setMove(&move);
-   }
-}
-
-DefineEngineMethod(AIConnection,getTrigger,bool, (S32 idx), ,"(int trigger)"
-              "Is the given trigger set?")
-{
-   if (idx >= 0 && idx < MaxTriggerKeys)
-      return object->getMove().trigger[idx];
-   return false;
-}
-
 
 //-----------------------------------------------------------------------------
 
