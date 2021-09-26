@@ -29,10 +29,13 @@
 #ifndef _MOVEMANAGER_H_
 #include "T3D/gameBase/moveManager.h"
 #endif
+#ifndef _MOVELIST_H_
+#include "T3D/gameBase/moveList.h"
+#endif
 
 //-----------------------------------------------------------------------------
 
-class AIConnection : public GameConnection
+class AIConnection : public GameConnection, public ITickable
 {
    typedef GameConnection Parent;
 
@@ -50,6 +53,21 @@ public:
    // GameConnection overrides
    void clearMoves(U32 n);
    virtual U32 getMoveList(Move **,U32 *numMoves);
+
+
+   /// This method is called every frame and lets the control interpolate between
+   /// ticks so you can smooth things as long as isProcessingTicks returns true
+   /// when it is called on the object
+   virtual void interpolateTick(F32 delta);
+
+   /// This method is called once every 32ms if isProcessingTicks returns true
+   /// when called on the object
+   virtual void processTick();
+
+   /// This method is called once every frame regardless of the return value of
+   /// isProcessingTicks and informs the object of the passage of time.
+   /// @param timeDelta Time increment in seconds.
+   virtual void advanceTime(F32 timeDelta);
 };
 
 

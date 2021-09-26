@@ -113,6 +113,23 @@ U32 AIConnection::getMoveList( Move **lngMove, U32 *numMoves )
 }
 
 
+void AIConnection::interpolateTick(F32 delta)
+{
+
+}
+
+void AIConnection::processTick()
+{
+   // FIXME: Gen moves here based on object type
+   mMoveList->pushMove(mMove);
+}
+
+void AIConnection::advanceTime(F32 timeDelta)
+{
+
+}
+
+
 //-----------------------------------------------------------------------------
 // Console functions & methods
 //-----------------------------------------------------------------------------
@@ -257,3 +274,4 @@ DefineEngineMethod(AIConnection,getAddress,const char*,(), ,"")
    // this is an ai connection.
    return "ai:local";
 }
+
