@@ -86,6 +86,9 @@ class HoverVehicleData : public VehicleData
 
    F32 stabLenMin;
    F32 stabLenMax;
+   F32 inactiveStabLenMin;
+   F32 inactiveStabLenMax;
+
    F32 stabSpringConstant;
    F32 stabDampingConstant;
 
@@ -149,6 +152,7 @@ class HoverVehicle : public Vehicle
    F32 getBaseStabilizerLength() const;
 
    bool mFloating;
+   bool mActive;
    F32  mThrustLevel;
 
    F32  mForwardThrust;

@@ -124,6 +124,8 @@ HoverVehicleData::HoverVehicleData()
 
    stabLenMin = 0.5f;
    stabLenMax = 2.0f;
+   inactiveStabLenMin = 0.5f;
+   inactiveStabLenMax = 2.0f;
    stabSpringConstant  = 30;
    stabDampingConstant = 10;
 
@@ -204,6 +206,10 @@ void HoverVehicleData::initPersistFields()
    addField( "stabLenMax", TypeF32, Offset(stabLenMax, HoverVehicleData),
       "Length of the base stabalizer when travelling at maximum speed "
       "(maxThrustSpeed).\n\n@see stabLenMin\n\n@see mainThrustForce" );
+   addField("inactiveStabLenMin", TypeF32, Offset(inactiveStabLenMin, HoverVehicleData),
+      "Like stabLenMin but for vehicle inactive state.");
+   addField("inactiveStabLenMax", TypeF32, Offset(inactiveStabLenMax, HoverVehicleData),
+      "Like stabLenMax but for vehicle inactive state.");
 
    addField( "stabSpringConstant", TypeF32, Offset(stabSpringConstant, HoverVehicleData),
       "Value used to generate stabalizer spring force. The force generated "
@@ -348,6 +354,8 @@ void HoverVehicleData::packData(BitStream* stream)
    stream->write(turboFactor);
    stream->write(stabLenMin);
    stream->write(stabLenMax);
+   stream->write(inactiveStabLenMin);
+   stream->write(inactiveStabLenMax);
    stream->write(stabSpringConstant);
    stream->write(stabDampingConstant);
    stream->write(gyroDrag);
@@ -397,6 +405,8 @@ void HoverVehicleData::unpackData(BitStream* stream)
    stream->read(&turboFactor);
    stream->read(&stabLenMin);
    stream->read(&stabLenMax);
+   stream->read(&inactiveStabLenMin);
+   stream->read(&inactiveStabLenMax);
    stream->read(&stabSpringConstant);
    stream->read(&stabDampingConstant);
    stream->read(&gyroDrag);
@@ -617,6 +627,7 @@ U32 HoverVehicle::packUpdate(NetConnection* con, U32 mask, BitStream* stream)
 
    //
    stream->writeInt(mThrustDirection,NumThrustBits);
+   stream->writeInt(mActive, 1);
 
    return retMask;
 }
@@ -626,6 +637,7 @@ void HoverVehicle::unpackUpdate(NetConnection* con, BitStream* stream)
    Parent::unpackUpdate(con, stream);
 
    mThrustDirection = ThrustDirection(stream->readInt(NumThrustBits));
+   mActive = stream->readInt(1);
    //
 }
 
@@ -645,8 +657,11 @@ void HoverVehicle::updateMove(const Move* move)
 
 F32 HoverVehicle::getBaseStabilizerLength() const
 {
-   F32 base = mDataBlock->stabLenMin;
-   F32 lengthDiff = mDataBlock->stabLenMax - mDataBlock->stabLenMin;
+   const F32 stabilizerLengthMinimum = mActive ? mDataBlock->stabLenMin : mDataBlock->inactiveStabLenMin;
+   const F32 stabilizerLengthMaximum = mActive ? mDataBlock->stabLenMax : mDataBlock->inactiveStabLenMax;
+
+   F32 base = stabilizerLengthMinimum;
+   F32 lengthDiff = stabilizerLengthMaximum - stabilizerLengthMinimum;
    F32 velLength  = mRigid.linVelocity.len();
    F32 minVel     = getMin(velLength, mDataBlock->maxThrustSpeed);
    F32 velDiff    = mDataBlock->maxThrustSpeed - minVel;
@@ -672,6 +687,8 @@ struct StabPoint
 void HoverVehicle::updateForces(F32 /*dt*/)
 {
    PROFILE_SCOPE( HoverVehicle_UpdateForces );
+
+   mActive = bool(getControllingClient());
 
    Point3F gravForce(0, 0, mRigid.mass * mNetGravity);
 
