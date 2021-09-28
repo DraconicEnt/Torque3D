@@ -8,8 +8,6 @@ ConsoleDocClass(DiscordObject,
    "@brief Object used to interact with the discord API.\n\n"
 );
 
-#define TORQUE_DISCORD_APPLICATION_ID 882019212577624074
-
 DiscordObject::DiscordObject() : mDiscordCore(nullptr), mCurrentStatusState(nullptr), mCurrentStatusDetails(nullptr)
 {
    auto testResult = discord::Core::Create(TORQUE_DISCORD_APPLICATION_ID, DiscordCreateFlags_Default, &mDiscordCore);

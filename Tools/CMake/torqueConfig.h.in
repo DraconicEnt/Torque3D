@@ -47,6 +47,12 @@
 /// Define me if you want to enable multithreading support.
 #cmakedefine TORQUE_MULTITHREAD
 
+/// Define me if you want to enable discord support
+#cmakedefine TORQUE_DISCORD_ENABLED
+
+/// Discord application ID
+#define TORQUE_DISCORD_APPLICATION_ID @TORQUE_DISCORD_APPLICATION_ID@
+
 /// Define me if you want to disable Torque memory manager.
 #cmakedefine TORQUE_DISABLE_MEMORY_MANAGER
 
