@@ -840,6 +840,10 @@ void WheeledVehicle::advanceTime(F32 dt)
       mShapeInstance->advanceTime(dt,mTailLightThread);
 }
 
+bool WheeledVehicle::shouldPowerWheel(Wheel* wheel, bool rightSide)
+{
+   return true;
+}
 
 //----------------------------------------------------------------------------
 /** Update the rigid body forces on the vehicle
@@ -923,15 +927,15 @@ void WheeledVehicle::updateForces(F32 dt)
          continue;
 
       F32 Fy = 0;
+
+      // First, let's compute the wheel's position, and worldspace velocity
+      Point3F pos, r, localVel;
+      currMatrix.mulP(wheel->data->pos, &pos);
+      mRigid.getOriginVector(pos, &r);
+      mRigid.getVelocity(r, &localVel);
+
       if (wheel->surface.contact) 
       {
-
-         // First, let's compute the wheel's position, and worldspace velocity
-         Point3F pos, r, localVel;
-         currMatrix.mulP(wheel->data->pos, &pos);
-         mRigid.getOriginVector(pos,&r);
-         mRigid.getVelocity(r, &localVel);
-
          // Spring force & damping
          F32 spring  = wheel->spring->force * (1 - wheel->extension);
 
@@ -1059,7 +1063,8 @@ void WheeledVehicle::updateForces(F32 dt)
 
       // Adjust the wheel's angular velocity based on engine torque
       // and tire deformation forces.
-      if (wheel->powered) 
+      const bool isRightSideWheel = r.x > 0.0f;
+      if (wheel->powered && shouldPowerWheel(wheel, isRightSideWheel)) 
       {
          F32 maxAvel = mDataBlock->maxWheelSpeed / wheel->tire->radius;
          wheel->torqueScale = (mFabs(wheel->avel) > maxAvel) ? 0 :

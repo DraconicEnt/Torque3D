@@ -158,6 +158,7 @@ class WheeledVehicle: public Vehicle
 {
    typedef Vehicle Parent;
 
+protected:
    enum MaskBits 
    {
       WheelMask    = Parent::NextFreeMask << 0,
@@ -221,6 +222,9 @@ class WheeledVehicle: public Vehicle
    void updateJetSound();
 
    virtual U32 getCollisionMask();
+
+   // Wheeled vehicle implementations
+   virtual bool shouldPowerWheel(Wheel* wheel, bool rightSide);
 
 public:
    DECLARE_CONOBJECT(WheeledVehicle);
