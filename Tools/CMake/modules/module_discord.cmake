@@ -20,21 +20,26 @@
 # IN THE SOFTWARE.
 # -----------------------------------------------------------------------------
 
-option(TORQUE_DISCORD_ENABLED "Enable Discord module" ON)
+option(TORQUE_DISCORD_ENABLED "Enable Discord module" OFF)
 if(TORQUE_DISCORD_ENABLED)
 	addPathRec( "${srcDir}/Discord/Discord" )
 	addPathRec( "${srcDir}/Discord/Binding" )
 	addInclude( "${srcDir}/Discord" )
-	
+
 	set(TORQUE_DISCORD_APPLICATION_ID "" CACHE STRING "Discord Application ID")
 	addDef( "TORQUE_DISCORD_APPLICATION_ID" ${TORQUE_DISCORD_APPLICATION_ID} )
-	
+
 	# Libs
-	if( WIN32 ) 
-		link_directories( "${srcDir}/Discord/Lib/x86_64" )
+    link_directories( "${srcDir}/Discord/Lib/x86_64" )
+	if( WIN32 )
 		addLib( "discord_game_sdk.dll.lib" )
-		
-		# File Copy for Release   
+
+		# File Copy for Release
 		INSTALL(FILES "${srcDir}/Discord/Lib/x86_64/discord_game_sdk.dll" DESTINATION "${projectOutDir}")
+    elseif(UNIX AND NOT APPLE)
+        addLib( "discord_game_sdk" )
+
+        # File Copy for Release
+        INSTALL(FILES "${srcDir}/Discord/Lib/x86_64/discord_game_sdk.so" DESTINATION "${projectOutDir}")
 	endif()
 endif()
