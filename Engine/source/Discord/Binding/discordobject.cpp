@@ -19,6 +19,19 @@ DiscordObject::DiscordObject() : mDiscordCore(nullptr), mCurrentStatusState(null
    });
 }
 
+DiscordObject::~DiscordObject()
+{
+   if (mCurrentStatusState)
+   {
+      delete mCurrentStatusState;
+   }
+
+   if (mCurrentStatusDetails)
+   {
+      delete mCurrentStatusDetails;
+   }
+}
+
 void DiscordObject::interpolateTick(F32 delta)
 {
 
@@ -41,8 +54,10 @@ void DiscordObject::setStatusState(const char* state)
       delete mCurrentStatusState;
    }
 
-   mCurrentStatusState = new char[dStrlen(state)];
-   dMemcpy(mCurrentStatusState, state, dStrlen(state));
+   const dsize_t stateLength = dStrlen(state);
+   mCurrentStatusState = new char[stateLength];
+   dMemcpy(mCurrentStatusState, state, stateLength);
+   mCurrentStatusState[stateLength] = 0x00;
 }
 
 void DiscordObject::setStatusDetails(const char* details)
@@ -52,8 +67,10 @@ void DiscordObject::setStatusDetails(const char* details)
       delete mCurrentStatusDetails;
    }
 
-   mCurrentStatusDetails = new char[dStrlen(details)];
-   dMemcpy(mCurrentStatusDetails, details, dStrlen(details));
+   const dsize_t detailsLength = dStrlen(details);
+   mCurrentStatusDetails = new char[detailsLength];
+   dMemcpy(mCurrentStatusDetails, details, detailsLength);
+   mCurrentStatusDetails[detailsLength] = 0x00;
 }
 
 void DiscordObject::updateStatus()

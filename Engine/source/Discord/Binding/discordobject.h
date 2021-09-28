@@ -24,6 +24,8 @@ protected:
 
 public:
    DiscordObject();
+   ~DiscordObject();
+
    DECLARE_CONOBJECT(DiscordObject);
    DECLARE_CALLBACK(void, onStatusUpdate, ());
 
