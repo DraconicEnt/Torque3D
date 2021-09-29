@@ -6,7 +6,7 @@
 #define _TRACKEDVEHICLE_H_
 
 #ifndef _WHEELEDVEHICLE_H_
-#include "T3D/vehicles/wheeledvehicle.h"
+#include "T3D/vehicles/wheeledVehicle.h"
 #endif
 
 struct TrackedVehicleData : public WheeledVehicleData 
