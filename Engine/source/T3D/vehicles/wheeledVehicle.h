@@ -106,7 +106,7 @@ struct WheeledVehicleData: public VehicleData
 
    enum Constants 
    {
-      MaxWheels = 8,
+      MaxWheels = 16,
       MaxWheelBits = 3
    };
 
