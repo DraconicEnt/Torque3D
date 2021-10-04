@@ -210,7 +210,7 @@ protected:
    bool onNewDataBlock( GameBaseData *dptr, bool reload );
    void processTick(const Move *move);
    void updateMove(const Move *move);
-   void updateForces(F32 dt);
+   void updateForces(F32 dt) override;
    void extendWheels(bool clientHack = false);
    void prepBatchRender( SceneRenderState *state, S32 mountedImageIndex );
 
@@ -222,9 +222,6 @@ protected:
    void updateJetSound();
 
    virtual U32 getCollisionMask();
-
-   // Wheeled vehicle implementations
-   virtual bool shouldPowerWheel(Wheel* wheel, bool rightSide);
 
 public:
    DECLARE_CONOBJECT(WheeledVehicle);

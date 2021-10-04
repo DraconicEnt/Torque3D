@@ -42,12 +42,32 @@ ConsoleDocClass(TrackedVehicleData,
 
 //----------------------------------------------------------------------------
 
+TrackedVehicleData::TrackedVehicleData() : WheeledVehicleData()
+{
+    maxTurnForce = 29000;
+}
+
 void TrackedVehicleData::initPersistFields()
 {
+    addField( "maxTurnForce", TYPEID< F32 >(), Offset(maxTurnForce, TrackedVehicleData),
+              "Maximum force to be used when spinning the vehicle in place." );
 
    Parent::initPersistFields();
 }
 
+void TrackedVehicleData::packData(BitStream* stream)
+{
+    Parent::packData(stream);
+
+    stream->write(maxTurnForce);
+}
+
+void TrackedVehicleData::unpackData(BitStream* stream)
+{
+    Parent::unpackData(stream);
+
+    stream->read(&maxTurnForce);
+}
 
 //----------------------------------------------------------------------------
 
@@ -79,26 +99,29 @@ bool TrackedVehicle::onNewDataBlock(GameBaseData* dptr, bool reload)
    return bool(mDataBlock);
 }
 
-bool TrackedVehicle::shouldPowerWheel(Wheel* wheel, bool rightSide)
+void TrackedVehicle::updateForces(F32 dt)
 {
-   if (mSteering.x == 0.0f)
-   {
-      return true;
-   }
+    Parent::updateForces(dt);
 
-   // If steering is negative, right tires must activate and vice versa
-   if (mSteering.x < 0.0f && rightSide)
-   {
-      return true;
-   }
+    // Enumerate wheels and accumulate turning force
+    float turningForce = 0.0f;
+    const float turningForcePerWheel = mDataBlock->maxTurnForce / mDataBlock->wheelCount;
 
-   if (mSteering.x > 0.0f && !rightSide)
-   {
-      return true;
-   }
+    Wheel* lastWheel = &mWheel[mDataBlock->wheelCount];
+    for (Wheel* wheel = mWheel; wheel < lastWheel; wheel++)
+    {
+        if (!wheel->tire || !wheel->spring)
+            continue;
 
+        if (wheel->surface.contact)
+        {
+            turningForce += turningForcePerWheel;
+        }
+    }
 
-   return false;
+    mRigid.torque += Point3F(0.0f, 0.0f, turningForce * -mSteering.x);
+    mRigid.angMomentum += mRigid.torque * dt;
+    mRigid.updateVelocity();
 }
 
 void TrackedVehicle::initPersistFields()

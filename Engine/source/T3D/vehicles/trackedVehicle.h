@@ -13,7 +13,14 @@ struct TrackedVehicleData : public WheeledVehicleData
 {
    typedef WheeledVehicleData Parent;
 
+   TrackedVehicleData();
    DECLARE_CONOBJECT(TrackedVehicleData);
+
+   F32 maxTurnForce;
+
+   void packData(BitStream* stream) override;
+   void unpackData(BitStream* stream) override;
+
 
    static void initPersistFields();
 };
@@ -29,8 +36,7 @@ class TrackedVehicle : public WheeledVehicle
 
    bool onNewDataBlock(GameBaseData* dptr, bool reload);
 
-   bool shouldPowerWheel(Wheel* wheel, bool rightSide) override;
-
+   void updateForces(F32 dt) override;
 public: 
    DECLARE_CONOBJECT(TrackedVehicle);
    static void initPersistFields();
