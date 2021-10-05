@@ -42,6 +42,7 @@
 #include "core/util/journal/journal.h"
 #include "cinterface/cinterface.h"
 #include "console/consoleValueStack.h"
+#include "console/jit.h"
 
 extern StringStack STR;
 extern ConsoleValueStack<4096> gCallStack;
@@ -61,7 +62,7 @@ void ConsoleValue::resetConversionBuffer()
 char* ConsoleValue::convertToBuffer() const
 {
    ConversionBuffer conversion;
-   
+
    if (type == ConsoleValueType::cvFloat)
       dSprintf(conversion.buffer, ConversionBufferStride, "%.9g", f);
    else
@@ -338,6 +339,7 @@ ConsoleFunctionGroupEnd( Clipboard );
 
 void postConsoleInput( RawData data );
 
+
 void init()
 {
    AssertFatal(active == false, "Con::init should only be called once.");
@@ -366,9 +368,9 @@ void init()
    setVariable("Con::prompt", "% ");
    addVariable("Con::logBufferEnabled", TypeBool, &logBufferEnabled, "If true, the log buffer will be enabled.\n"
       "@ingroup Console\n");
-   addVariable("Con::printLevel", TypeS32, &printLevel, 
+   addVariable("Con::printLevel", TypeS32, &printLevel,
       "@brief This is deprecated.\n\n"
-      "It is no longer in use and does nothing.\n"      
+      "It is no longer in use and does nothing.\n"
       "@ingroup Console\n");
    addVariable("Con::warnUndefinedVariables", TypeBool, &gWarnUndefinedScriptVariables, "If true, a warning will be displayed in the console whenever a undefined variable is used in script.\n"
       "@ingroup Console\n");
@@ -384,17 +386,17 @@ void init()
    addVariable( "Con::Root", TypeString, &gCurrentRoot, "The mod folder for the currently executing script file.\n"
       "@ingroup FileSystem\n" );
 
-   // alwaysUseDebugOutput determines whether to send output to the platform's 
-   // "debug" system.  see winConsole for an example.  
+   // alwaysUseDebugOutput determines whether to send output to the platform's
+   // "debug" system.  see winConsole for an example.
    // in ship builds we don't expose this variable to script
    // and we set it to false by default (don't want to provide more information
-   // to potential hackers).  platform code should also ifdef out the code that 
-   // pays attention to this in ship builds (see winConsole.cpp) 
-   // note that enabling this can slow down your game 
+   // to potential hackers).  platform code should also ifdef out the code that
+   // pays attention to this in ship builds (see winConsole.cpp)
+   // note that enabling this can slow down your game
    // if you are running from the debugger and printing a lot of console messages.
 #ifndef TORQUE_SHIPPING
-   addVariable("Con::alwaysUseDebugOutput", TypeBool, &alwaysUseDebugOutput, 
-      "@brief Determines whether to send output to the platform's \"debug\" system.\n\n" 
+   addVariable("Con::alwaysUseDebugOutput", TypeBool, &alwaysUseDebugOutput,
+      "@brief Determines whether to send output to the platform's \"debug\" system.\n\n"
       "@note This is disabled in shipping builds.\n"
       "@ingroup Console");
 #else
@@ -411,6 +413,9 @@ void init()
 
    // Plug us into the journaled console input signal.
    smConsoleInput.notify(postConsoleInput);
+
+   // Ensure ie. the JIT is ready
+   CodeBlock::initialize();
 }
 
 //--------------------------------------
@@ -460,19 +465,19 @@ void unlockLog()
 U32 tabComplete(char* inputBuffer, U32 cursorPos, U32 maxResultLength, bool forwardTab)
 {
    // Check for null input.
-   if (!inputBuffer[0]) 
+   if (!inputBuffer[0])
    {
       return cursorPos;
    }
 
    // Cap the max result length.
-   if (maxResultLength > MaxCompletionBufferSize) 
+   if (maxResultLength > MaxCompletionBufferSize)
    {
       maxResultLength = MaxCompletionBufferSize;
    }
 
    // See if this is the same partial text as last checked.
-   if (String::compare(tabBuffer, inputBuffer)) 
+   if (String::compare(tabBuffer, inputBuffer))
    {
       // If not...
       // Save it for checking next time.
@@ -486,10 +491,10 @@ U32 tabComplete(char* inputBuffer, U32 cursorPos, U32 maxResultLength, bool forw
       completionBaseStart = p;
       completionBaseLen = cursorPos - p;
       // Is this function being invoked on an object?
-      if (inputBuffer[p - 1] == '.') 
+      if (inputBuffer[p - 1] == '.')
       {
          // If so...
-         if (p <= 1) 
+         if (p <= 1)
          {
             // Bail if no object identifier.
             return cursorPos;
@@ -497,12 +502,12 @@ U32 tabComplete(char* inputBuffer, U32 cursorPos, U32 maxResultLength, bool forw
 
          // Find the object identifier.
          S32 objLast = --p;
-         while ((p > 0) && (inputBuffer[p - 1] != ' ') && (inputBuffer[p - 1] != '(')) 
+         while ((p > 0) && (inputBuffer[p - 1] != ' ') && (inputBuffer[p - 1] != '('))
          {
             p--;
          }
 
-         if (objLast == p) 
+         if (objLast == p)
          {
             // Bail if no object identifier.
             return cursorPos;
@@ -512,13 +517,13 @@ U32 tabComplete(char* inputBuffer, U32 cursorPos, U32 maxResultLength, bool forw
          dStrncpy(completionBuffer, inputBuffer + p, objLast - p);
          completionBuffer[objLast - p] = 0;
          tabObject = Sim::findObject(completionBuffer);
-         if (tabObject == NULL) 
+         if (tabObject == NULL)
          {
             // Bail if not found.
             return cursorPos;
          }
       }
-      else 
+      else
       {
          // Not invoked on an object; we'll use the global namespace.
          tabObject = 0;
@@ -535,20 +540,20 @@ U32 tabComplete(char* inputBuffer, U32 cursorPos, U32 maxResultLength, bool forw
    {
       newText = tabObject->tabComplete(inputBuffer + completionBaseStart, completionBaseLen, forwardTab);
    }
-   else 
+   else
    {
       // In the global namespace, we can complete on global vars as well as functions.
       if (inputBuffer[completionBaseStart] == '$')
       {
          newText = gEvalState.globalVars.tabComplete(inputBuffer + completionBaseStart, completionBaseLen, forwardTab);
       }
-      else 
+      else
       {
          newText = Namespace::global()->tabComplete(inputBuffer + completionBaseStart, completionBaseLen, forwardTab);
       }
    }
 
-   if (newText) 
+   if (newText)
    {
       // If we got something, append it to the input text.
       S32 len = dStrlen(newText);
@@ -573,23 +578,23 @@ U32 tabComplete(char* inputBuffer, U32 cursorPos, U32 maxResultLength, bool forw
 static void log(const char *string)
 {
    // Bail if we ain't logging.
-   if (!consoleLogMode) 
+   if (!consoleLogMode)
    {
       return;
    }
 
    // In mode 1, we open, append, close on each log write.
-   if ((consoleLogMode & 0x3) == 1) 
+   if ((consoleLogMode & 0x3) == 1)
    {
       consoleLogFile.open(defLogFileName, Torque::FS::File::ReadWrite);
    }
 
    // Write to the log if its status is hunky-dory.
-   if ((consoleLogFile.getStatus() == Stream::Ok) || (consoleLogFile.getStatus() == Stream::EOS)) 
+   if ((consoleLogFile.getStatus() == Stream::Ok) || (consoleLogFile.getStatus() == Stream::EOS))
    {
       consoleLogFile.setPosition(consoleLogFile.getStreamSize());
       // If this is the first write...
-      if (newLogFile) 
+      if (newLogFile)
       {
          // Make a header.
          Platform::LocalTime lt;
@@ -604,14 +609,14 @@ static void log(const char *string)
                lt.sec);
          consoleLogFile.write(dStrlen(buffer), buffer);
          newLogFile = false;
-         if (consoleLogMode & 0x4) 
+         if (consoleLogMode & 0x4)
          {
             // Dump anything that has been printed to the console so far.
             consoleLogMode -= 0x4;
             U32 size, line;
             ConsoleLogEntry *log;
             getLockLog(log, size);
-            for (line = 0; line < size; line++) 
+            for (line = 0; line < size; line++)
             {
                consoleLogFile.write(dStrlen(log[line].mString), log[line].mString);
                consoleLogFile.write(2, "\r\n");
@@ -624,7 +629,7 @@ static void log(const char *string)
       consoleLogFile.write(2, "\r\n");
    }
 
-   if ((consoleLogMode & 0x3) == 1) 
+   if ((consoleLogMode & 0x3) == 1)
    {
       consoleLogFile.close();
    }
@@ -636,7 +641,7 @@ static void _printf(ConsoleLogEntry::Level level, ConsoleLogEntry::Type type, co
 {
    if (!active)
       return;
-   Con::active = false; 
+   Con::active = false;
 
    char buffer[8192];
    U32 offset = 0;
@@ -694,13 +699,13 @@ static void _printf(ConsoleLogEntry::Level level, ConsoleLogEntry::Type type, co
             ConsoleLogEntry entry;
             entry.mLevel  = level;
             entry.mType   = type;
-#ifndef TORQUE_SHIPPING // this is equivalent to a memory leak, turn it off in ship build            
+#ifndef TORQUE_SHIPPING // this is equivalent to a memory leak, turn it off in ship build
             dsize_t logStringLen = dStrlen(pos) + 1;
             entry.mString = (const char *)consoleLogChunker.alloc(logStringLen);
             dStrcpy(const_cast<char*>(entry.mString), pos, logStringLen);
-            
+
             // This prevents infinite recursion if the console itself needs to
-            // re-allocate memory to accommodate the new console log entry, and 
+            // re-allocate memory to accommodate the new console log entry, and
             // LOG_PAGE_ALLOCS is defined. It is kind of a dirty hack, but the
             // uses for LOG_PAGE_ALLOCS are limited, and it is not worth writing
             // a lot of special case code to support this situation. -patw
@@ -854,7 +859,7 @@ void setVariable(const char *name, const char *value)
    {
       obj->setDataField(StringTable->insert(objField), 0, value);
    }
-   else 
+   else
    {
       name = prependDollar(name);
       gEvalState.globalVars.setVariable(StringTable->insert(name), value);
@@ -946,21 +951,21 @@ void stripColorChars(char* line)
 {
    char* c = line;
    char cp = *c;
-   while (cp) 
+   while (cp)
    {
-      if (cp < 18) 
+      if (cp < 18)
       {
          // Could be a color control character; let's take a closer look.
-         if ((cp != 8) && (cp != 9) && (cp != 10) && (cp != 13)) 
+         if ((cp != 8) && (cp != 9) && (cp != 10) && (cp != 13))
          {
             // Yep... copy following chars forward over this.
             char* cprime = c;
             char cpp;
-            do 
+            do
             {
                cpp = *++cprime;
                *(cprime - 1) = cpp;
-            } 
+            }
             while (cpp);
             // Back up 1 so we'll check this position again post-copy.
             c--;
@@ -970,7 +975,7 @@ void stripColorChars(char* line)
    }
 }
 
-// 
+//
 const char *getObjectTokenField(const char *name)
 {
    const char *dot = dStrchr(name, '.');
@@ -1076,17 +1081,17 @@ F32 getFloatVariable(const char *varName, F32 def)
 
 //---------------------------------------------------------------------------
 
-void addVariable(    const char *name, 
-                     S32 type, 
-                     void *dptr, 
+void addVariable(    const char *name,
+                     S32 type,
+                     void *dptr,
                      const char* usage )
 {
    gEvalState.globalVars.addVariable( name, type, dptr, usage );
 }
 
-void addConstant(    const char *name, 
-                     S32 type, 
-                     const void *dptr, 
+void addConstant(    const char *name,
+                     S32 type,
+                     const void *dptr,
                      const char* usage )
 {
    Dictionary::Entry* entry = gEvalState.globalVars.addVariable( name, type, const_cast< void* >( dptr ), usage );
@@ -1431,7 +1436,7 @@ bool executeFile(const char* fileName, bool noCalls, bool journalScript)
          // compile this baddie.
 #ifdef TORQUE_DEBUG
          Con::printf("Compiling %s...", scriptFileName);
-#endif   
+#endif
 
          CodeBlock *code = new CodeBlock();
          code->compile(nameBuffer, scriptFileName, script);
@@ -1469,7 +1474,7 @@ bool executeFile(const char* fileName, bool noCalls, bool journalScript)
       // We're all compiled, so let's run it.
 #ifdef TORQUE_DEBUG
       Con::printf("Loading compiled script %s.", scriptFileName);
-#endif   
+#endif
       CodeBlock *code = new CodeBlock;
       code->read(scriptFileName, *compiledStream);
       delete compiledStream;
@@ -1484,7 +1489,7 @@ bool executeFile(const char* fileName, bool noCalls, bool journalScript)
          // we're on a readonly volume.
 #ifdef TORQUE_DEBUG
          Con::printf("Executing %s.", scriptFileName);
-#endif   
+#endif
 
          CodeBlock *newCodeBlock = new CodeBlock();
          StringTableEntry name = StringTable->insert(scriptFileName);
@@ -1560,9 +1565,9 @@ ConsoleValue _internalExecute(S32 argc, ConsoleValue argv[])
       ret.setString(methodRes);
       return std::move(ret);
    }
-   
+
    Namespace::Entry *ent;
-   
+
    ent = Namespace::global()->lookup(funcName);
 
    if(!ent)
@@ -1592,7 +1597,7 @@ ConsoleValue execute(S32 argc, ConsoleValue argv[])
       SimConsoleThreadExecCallback cb;
       SimConsoleThreadExecEvent *evt = new SimConsoleThreadExecEvent(argc, argv, false, &cb);
       Sim::postEvent(Sim::getRootGroup(), evt, Sim::getCurrentTime());
-      
+
       return cb.waitForResult();
    }
 #endif
@@ -1618,7 +1623,7 @@ static ConsoleValue _internalExecute(SimObject *object, S32 argc, ConsoleValue a
    }
 
    // [neo, 10/05/2007 - #3010]
-   // Make sure we don't get recursive calls, respect the flag!   
+   // Make sure we don't get recursive calls, respect the flag!
    // Should we be calling handlesMethod() first?
    if( !thisCallOnly )
    {
@@ -1654,7 +1659,7 @@ static ConsoleValue _internalExecute(SimObject *object, S32 argc, ConsoleValue a
    {
       U32 ident = object->getId();
       const char* oldIdent = dStrdup(argv[1].getString());
-      
+
       Namespace::Entry *ent = object->getNamespace()->lookup(funcName);
 
       if(ent == NULL)
@@ -1836,7 +1841,7 @@ const char *getFormattedData(S32 type, const char *data, const EnumTable *tbl, B
    ConsoleBaseType *cbt = ConsoleBaseType::getType( type );
    AssertFatal(cbt, "Con::getData - could not resolve type ID!");
 
-   // Datablock types are just a datablock 
+   // Datablock types are just a datablock
    // name and don't ever need formatting.
    if ( cbt->isDatablock() )
       return data;

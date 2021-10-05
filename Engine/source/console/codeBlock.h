@@ -48,6 +48,12 @@ struct CompilerLocalVariableToRegisterMappingTable
 class Stream;
 class ConsoleValue;
 
+// Forward declaration because including LLVM here causes problems
+namespace llvm
+{
+    class Module;
+}
+
 /// Core TorqueScript code management class.
 ///
 /// This class represents a block of code, usually mapped directly to a file.
@@ -56,6 +62,10 @@ class CodeBlock
 private:
    static CodeBlock* smCodeBlockList;
    static CodeBlock* smCurrentCodeBlock;
+
+   bool jitCompilable;
+   llvm::Module* llvmModule;
+
 
 public:
    static bool                      smInFunction;
@@ -70,6 +80,8 @@ public:
    {
       return smCodeBlockList;
    }
+
+   static void initialize();
 
    static StringTableEntry getCurrentCodeBlockName();
    static StringTableEntry getCurrentCodeBlockFullPath();
@@ -117,7 +129,7 @@ public:
 
    void clearBreakpoint(U32 lineNumber);
 
-   /// Set a OP_BREAK instruction on a line. If a break 
+   /// Set a OP_BREAK instruction on a line. If a break
    /// is not possible on that line it returns false.
    /// @param lineNumber The one based line number.
    bool setBreakpoint(U32 lineNumber);
@@ -125,7 +137,7 @@ public:
    void findBreakLine(U32 ip, U32 &line, U32 &instruction);
    const char *getFileLine(U32 ip);
 
-   /// 
+   ///
    String getFunctionArgs(U32 offset);
 
    bool read(StringTableEntry fileName, Stream &st);
@@ -135,24 +147,24 @@ public:
    void decRefCount();
 
    /// Compiles and executes a block of script storing the compiled code in this
-   /// CodeBlock. If there is no filename breakpoints will not be generated and 
-   /// the CodeBlock will not be added to the linked list of loaded CodeBlocks. 
+   /// CodeBlock. If there is no filename breakpoints will not be generated and
+   /// the CodeBlock will not be added to the linked list of loaded CodeBlocks.
    /// Note that if the script contains no executable statements the CodeBlock
-   /// will delete itself on return an empty string. The return string is any 
+   /// will delete itself on return an empty string. The return string is any
    /// result of the code executed, if any, or an empty string.
    ///
-   /// @param fileName The file name, including path and extension, for the 
+   /// @param fileName The file name, including path and extension, for the
    /// block of code or an empty string.
    /// @param script The script code to compile and execute.
    /// @param noCalls Skips calling functions from the script.
-   /// @param setFrame A zero based index of the stack frame to execute the code 
+   /// @param setFrame A zero based index of the stack frame to execute the code
    /// with, zero being the top of the stack. If the the index is
    /// -1 a new frame is created. If the index is out of range the
    /// top stack frame is used.
    ConsoleValue compileExec(StringTableEntry fileName, const char *script,
       bool noCalls, S32 setFrame = -1);
 
-   /// Executes the existing code in the CodeBlock. The return string is any 
+   /// Executes the existing code in the CodeBlock. The return string is any
    /// result of the code executed, if any, or an empty string.
    ///
    /// @param offset The instruction offset to start executing from.
@@ -162,7 +174,7 @@ public:
    /// zero to execute code outside of a function.
    /// @param argv The function parameter list.
    /// @param noCalls Skips calling functions from the script.
-   /// @param setFrame A zero based index of the stack frame to execute the code 
+   /// @param setFrame A zero based index of the stack frame to execute the code
    /// with, zero being the top of the stack. If the the index is
    /// -1 a new frame is created. If the index is out of range the
    /// top stack frame is used.

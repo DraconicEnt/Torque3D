@@ -53,6 +53,8 @@ CodeBlock::CodeBlock()
    lineBreakPairs = NULL;
    breakList = NULL;
    breakListSize = 0;
+   llvmModule = NULL;
+   jitCompilable = true;
 
    refCount = 0;
    code = NULL;
@@ -634,7 +636,7 @@ ConsoleValue CodeBlock::compileExec(StringTableEntry fileName, const char *inStr
       addToCodeList();
 
    gStatementList = NULL;
-   
+
    // we are an eval compile if we don't have a file name associated (no exec)
    gIsEvalCompile = fileName == NULL;
    // In eval mode, global func vars are allowed.
@@ -677,7 +679,7 @@ ConsoleValue CodeBlock::compileExec(StringTableEntry fileName, const char *inStr
 
    codeStream.emit(OP_RETURN_VOID);
    codeStream.emitCodeStream(&codeSize, &code, &lineBreakPairs);
-   
+
    S32 localRegisterCount = gIsEvalCompile ? gEvalFuncVars.count() : 0;
 
    consoleAllocReset();

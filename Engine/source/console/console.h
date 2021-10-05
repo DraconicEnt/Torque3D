@@ -155,7 +155,7 @@ class ConsoleValue
    {
       char buffer[ConversionBufferStride];
    };
-   
+
    static Vector<ConversionBuffer> sConversionBuffer;
 
    char* convertToBuffer() const;
@@ -500,7 +500,7 @@ namespace Con
       /// 01/13/09 - TMS - 45->46 Added script assert
       /// 09/07/14 - jamesu - 46->47 64bit support
       /// 10/14/14 - jamesu - 47->48 Added opcodes to reduce reliance on strings in function calls
-      /// 10/07/17 - JTH - 48->49 Added opcode for function pointers and revamp of interpreter 
+      /// 10/07/17 - JTH - 48->49 Added opcode for function pointers and revamp of interpreter
       ///                         from switch to function calls.
       /// 09/04/21 - JTH - 49->50 Rewrite of interpreter
       DSOVersion = 50,
@@ -1033,10 +1033,10 @@ namespace Con
    /// Can be used as follows:
    /// - Con::executef("functionName", ...);
    /// - Con::executef(mySimObject, "functionName", ...);
-   /// 
-   /// NOTE: if you get a rather cryptic template error coming through here, most likely you are trying to 
+   ///
+   /// NOTE: if you get a rather cryptic template error coming through here, most likely you are trying to
    /// convert a parameter which EngineMarshallType does not have a specialization for.
-   /// Another problem can occur if you do not include "console/simBase.h" and "console/engineAPI.h" 
+   /// Another problem can occur if you do not include "console/simBase.h" and "console/engineAPI.h"
    /// since _EngineConsoleExecCallbackHelper and SimConsoleThreadExecCallback are required.
    ///
    /// @see _EngineConsoleExecCallbackHelper
@@ -1299,7 +1299,7 @@ public:
 
 
 /// Define a C++ method that calls back to script on an object.
-/// 
+///
 /// @see consoleCallback.h
 #define DECLARE_CALLBACK( returnType, name, args )  \
    virtual returnType name ## _callback args

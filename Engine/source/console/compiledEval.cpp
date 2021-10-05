@@ -22,6 +22,17 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+// Included here to avoid conflicts with other files
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/ExecutionEngine/JITSymbol.h>
+#include <llvm/ExecutionEngine/SectionMemoryManager.h>
+#include <llvm/ExecutionEngine/Orc/CompileUtils.h>
+#include <llvm/ExecutionEngine/Orc/IRCompileLayer.h>
+#include <llvm/ExecutionEngine/Orc/LambdaResolver.h>
+#include <llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h>
+
 #include "platform/platform.h"
 #include "console/console.h"
 
@@ -119,21 +130,24 @@ S32 _STK = 0;
 char curFieldArray[256];
 char prevFieldArray[256];
 
-const char* tsconcat(const char* strA, const char* strB, S32& outputLen)
+extern "C"
 {
-   S32 lenA = dStrlen(strA);
-   S32 lenB = dStrlen(strB);
+    const char* tsconcat(const char* strA, const char* strB, S32& outputLen)
+    {
+       S32 lenA = dStrlen(strA);
+       S32 lenB = dStrlen(strB);
 
-   S32 len = lenA + lenB + 1;
+       S32 len = lenA + lenB + 1;
 
-   char* concatBuffer = (char*)dMalloc(len);
+       char* concatBuffer = (char*)dMalloc(len);
 
-   concatBuffer[len - 1] = '\0';
-   memcpy(concatBuffer, strA, lenA);
-   memcpy(concatBuffer + lenA, strB, lenB);
+       concatBuffer[len - 1] = '\0';
+       memcpy(concatBuffer, strA, lenA);
+       memcpy(concatBuffer + lenA, strB, lenB);
 
-   outputLen = lenA + lenB;
-   return concatBuffer;
+       outputLen = lenA + lenB;
+       return concatBuffer;
+    }
 }
 
 namespace Con
@@ -195,7 +209,7 @@ static void getFieldComponent(SimObject* object, StringTableEntry field, const c
          StringTable->insert("a")
       };
 
-      // Translate xyzw and rgba into the indexed component 
+      // Translate xyzw and rgba into the indexed component
       // of the variable or field.
       if (subField == xyzw[0] || subField == rgba[0])
          dStrcpy(val, StringUnit::getUnit(prevVal, 0, " \t\n"), 128);
@@ -253,7 +267,7 @@ static void setFieldComponent(SimObject* object, StringTableEntry field, const c
       StringTable->insert("a")
    };
 
-   // Insert the value into the specified 
+   // Insert the value into the specified
    // component of the string.
    if (subField == xyzw[0] || subField == rgba[0])
       dStrcpy(val, StringUnit::setUnit(prevVal, 0, strValue, " \t\n"), 128);
@@ -607,6 +621,125 @@ TORQUE_FORCEINLINE void doIntOperation()
 
 //-----------------------------------------------------------------------------
 
+static llvm::TargetMachine* smJitTarget;
+
+void CodeBlock::initialize()
+{
+    LLVMInitializeNativeTarget();
+    llvm::InitializeNativeTargetAsmPrinter();
+    smJitTarget = llvm::EngineBuilder().selectTarget();
+}
+
+
+
+//==============================================================================
+// IR Helper Functions
+// =============================================================================
+
+extern "C"
+{
+    const char* getConsoleValueString(ConsoleValue* value)
+    {
+        Con::errorf("I Live");
+        return value->getString();
+    }
+}
+
+llvm::FunctionCallee llvmGetTSConcat(llvm::Module* llvmModule, llvm::LLVMContext* llvmContext)
+{
+    return llvmModule->getOrInsertFunction("tsconcat", llvm::Type::getInt8PtrTy(*llvmContext),
+                                                       llvm::Type::getInt8PtrTy(*llvmContext), llvm::Type::getInt8PtrTy(*llvmContext), llvm::Type::getInt32PtrTy(*llvmContext));
+}
+
+llvm::FunctionCallee llvmGetGetConsoleValueString(llvm::Module* llvmModule, llvm::LLVMContext* llvmContext)
+{
+    return llvmModule->getOrInsertFunction("getConsoleValueString", llvm::Type::getInt8PtrTy(*llvmContext), llvm::Type::getInt8PtrTy(*llvmContext));
+}
+
+llvm::ConstantInt* llvmGetConsoleValueSize(llvm::LLVMContext* llvmContext)
+{
+    return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvmContext), sizeof(ConsoleValue));
+}
+
+llvm::Value* llvmGetStackPositionPointer(llvm::Module* llvmModule, llvm::LLVMContext* llvmContext)
+{
+    llvm::Constant* raw = llvm::ConstantInt::get(llvm::Type::getInt32PtrTy(*llvmContext), (std::size_t)&_STK);
+    return llvm::ConstantExpr::getIntToPtr(raw, llvm::PointerType::getUnqual(llvm::Type::getInt32PtrTy(*llvmContext)));
+}
+
+llvm::Value* llvmGetStackPointer(llvm::Module* llvmModule, llvm::LLVMContext* llvmContext)
+{
+    llvm::Constant* raw = llvm::ConstantInt::get(llvm::Type::getInt8PtrTy(*llvmContext), (std::size_t)&stack);
+    return llvm::ConstantExpr::getIntToPtr(raw, llvm::PointerType::getUnqual(llvm::Type::getInt8PtrTy(*llvmContext)));
+}
+
+llvm::Value* llvmGetConsoleValuePointer(llvm::Module* llvmModule, llvm::LLVMContext* llvmContext, llvm::IRBuilder<>* llvmBuilder, llvm::Value* index)
+{
+    llvm::Value* stackPointer = llvmGetStackPointer(llvmModule, llvmContext);
+    llvm::ConstantInt* consoleValueSize = llvmGetConsoleValueSize(llvmContext);
+    llvm::Value* consoleValueOffset = llvmBuilder->CreateMul(consoleValueSize, index);
+    return llvmBuilder->CreateAdd(stackPointer, consoleValueOffset);
+}
+
+llvm::JITSymbol dummy_lookup(const std::string& name)
+{
+	return llvm::JITSymbol(NULL);
+}
+
+//==============================================================================
+// Main LLVM IR Function
+//==============================================================================
+bool emitLLVMIR(CodeBlock* block, U32 ip, U32 instruction, llvm::Module* llvmModule, llvm::IRBuilder<>* llvmBuilder, llvm::LLVMContext* llvmContext)
+{
+    llvm::ArrayRef<ConsoleValue> stackReference(stack, MaxStackSize);
+
+    switch (instruction)
+    {
+        case OP_REWIND_STR:
+            TORQUE_CASE_FALLTHROUGH;
+
+        case OP_TERMINATE_REWIND_STR:
+        {
+            llvm::Value* stackPointer = llvmGetStackPointer(llvmModule, llvmContext);
+            llvm::Value* stackPositionPointer = llvmGetStackPositionPointer(llvmModule, llvmContext);
+            auto tsConcatFunction = llvmGetTSConcat(llvmModule, llvmContext);
+            auto getConsoleValueStringFunction = llvmGetGetConsoleValueString(llvmModule, llvmContext);
+
+            AssertFatal(stackPointer && stackPositionPointer, "Invalid LLVM IR State");
+
+            // Load current & previous stack positions
+            llvm::Value* stackPosition = llvmBuilder->CreateLoad(stackPositionPointer);
+            llvm::Value* previousStackPosition = llvmBuilder->CreateSub(stackPosition, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*llvmContext), 1));
+
+            // Load the pointers to the current & previous ConsoleValue objects
+            llvm::Value* consoleValuePointer = llvmGetConsoleValuePointer(llvmModule, llvmContext, llvmBuilder, stackPosition);
+            llvm::Value* previousConsoleValuePointer = llvmGetConsoleValuePointer(llvmModule, llvmContext, llvmBuilder, previousStackPosition);
+
+            // Retrieve the string value on both
+            llvm::Value* stringValue = llvmBuilder->CreateCall(getConsoleValueStringFunction, consoleValuePointer);
+            llvm::Value* previousStringValue = llvmBuilder->CreateCall(getConsoleValueStringFunction, previousConsoleValuePointer);
+
+            //llvm::Value*
+
+
+            /*
+           S32 len;
+           const char* concat = tsconcat(stack[_STK - 1].getString(), stack[_STK].getString(), len);
+
+           stack[_STK - 1].setStringRef(concat, len);
+           _STK--;NULL
+           break;
+           */
+        }
+
+        default:
+            Con::errorf("LLVM IR Unknown Instruction: %u", instruction);
+            return false;
+    }
+
+    return false;
+}
+
 U32 gExecCount = 0;
 ConsoleValue CodeBlock::exec(U32 ip, const char* functionName, Namespace* thisNamespace, U32 argc, ConsoleValue* argv, bool noCalls, StringTableEntry packageName, S32 setFrame)
 {
@@ -763,9 +896,48 @@ ConsoleValue CodeBlock::exec(U32 ip, const char* functionName, Namespace* thisNa
    static S32 VAL_BUFFER_SIZE = 1024;
    FrameTemp<char> valBuffer(VAL_BUFFER_SIZE);
 
+   llvm::LLVMContext llvmContext;
+   llvm::IRBuilder<> llvmBuilder(llvmContext);
+
+   bool shouldEmitIR = false;
+   if (jitCompilable && functionName && !llvmModule)
+   {
+       shouldEmitIR = true;
+       llvmModule = new llvm::Module("Torque Script", llvmContext);
+
+       // Bootstrap function definition
+       std::vector<llvm::Type*> parameterTypes(0, llvm::Type::getVoidTy(llvmContext));
+       llvm::FunctionType* prototype = llvm::FunctionType::get(llvm::Type::getVoidTy(llvmContext), parameterTypes, false);
+
+       llvm::Function* llvmFunction = llvm::Function::Create(prototype, llvm::Function::ExternalLinkage, functionName, llvmModule);
+       llvm::BasicBlock* llvmBody = llvm::BasicBlock::Create(llvmContext, "body", llvmFunction);
+       llvmBuilder.SetInsertPoint(llvmBody);
+   }
+
    for (;;)
    {
       U32 instruction = code[ip++];
+
+      // Attempt to emit LLVM IR for each op
+      if (shouldEmitIR)
+      {
+          jitCompilable = emitLLVMIR(this, ip, instruction, llvmModule, &llvmBuilder, &llvmContext);
+
+          if (!jitCompilable)
+          {
+              // Finish up the function code
+              llvmBuilder.CreateRetVoid();
+
+              // FIXME: For now we attempt to compile what we have for testing
+              const llvm::DataLayout llvmDataLayout = smJitTarget->createDataLayout();
+    
+              delete llvmModule;
+              shouldEmitIR = false;
+
+              Con::errorf("LLVM IR Error in Function: %s", functionName);
+          }
+      }
+
    breakContinue:
       switch (instruction)
       {
