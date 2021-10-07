@@ -41,9 +41,6 @@
 #include "ts/tsShapeInstance.h"
 #include "console/engineAPI.h"
 
-
-const F32 sRotationSpeed = 6.0f;        // Secs/Rotation
-const F32 sAtRestVelocity = 0.15f;      // Min speed after collision
 const S32 sCollisionTimeout = 15;       // Timout value in ticks
 
 // Client prediction
@@ -52,7 +49,7 @@ static S32 sMaxWarpTicks = 3;           // Max warp duration in ticks
 
 const U32 sClientCollisionMask = (TerrainObjectType     |
                                   StaticShapeObjectType |
-                                  VehicleObjectType     |  
+                                  VehicleObjectType     |
                                   PlayerObjectType);
 
 const U32 sServerCollisionMask = (sClientCollisionMask);
@@ -64,7 +61,7 @@ const S32 Item::csmAtRestTimer = 64;
 IMPLEMENT_CO_DATABLOCK_V1(ItemData);
 
 ConsoleDocClass( ItemData,
-   "@brief Stores properties for an individual Item type.\n\n"   
+   "@brief Stores properties for an individual Item type.\n\n"
 
    "Items represent an object in the world, usually one that the player will interact with.  "
    "One example is a health kit on the group that is automatically picked up when the player "
@@ -118,6 +115,8 @@ ItemData::ItemData()
    sticky = false;
    gravityMod = 1.0;
    maxVelocity = 25.0f;
+   rotationSpeed = 6.0f;
+   atRestVelocity = 0.15f;
 
    density = 2;
    drag = 0.5;
@@ -126,7 +125,7 @@ ItemData::ItemData()
    lightType = Item::NoLight;
    lightColor.set(1.f,1.f,1.f,1.f);
    lightTime = 1000;
-   lightRadius = 10.f; 
+   lightRadius = 10.f;
 
    simpleServerCollision = true;
 }
@@ -143,29 +142,31 @@ void ItemData::initPersistFields()
 {
    addField("friction",          TypeF32,       Offset(friction,           ItemData), "A floating-point value specifying how much velocity is lost to impact and sliding friction.");
    addField("elasticity",        TypeF32,       Offset(elasticity,         ItemData), "A floating-point value specifying how 'bouncy' this ItemData is.");
-   addField("sticky",            TypeBool,      Offset(sticky,             ItemData), 
+   addField("sticky",            TypeBool,      Offset(sticky,             ItemData),
       "@brief If true, ItemData will 'stick' to any surface it collides with.\n\n"
       "When an item does stick to a surface, the Item::onStickyCollision() callback is called.  The Item has methods to retrieve "
       "the world position and normal the Item is stuck to.\n"
       "@note Valid objects to stick to must be of StaticShapeObjectType.\n");
    addField("gravityMod",        TypeF32,       Offset(gravityMod,         ItemData), "Floating point value to multiply the existing gravity with, just for this ItemData.");
    addField("maxVelocity",       TypeF32,       Offset(maxVelocity,        ItemData), "Maximum velocity that this ItemData is able to move.");
+   addField("rotationSpeed",     TypeF32,       Offset(rotationSpeed,      ItemData), "The item rotation speed in secs/rotation.");
+   addField("atRestVelocity",    TypeF32,       Offset(atRestVelocity,     ItemData), "The overall velocity for the item to be considered at rest.");
 
    addField("lightType",         TYPEID< Item::LightType >(),      Offset(lightType, ItemData), "Type of light to apply to this ItemData. Options are NoLight, ConstantLight, PulsingLight. Default is NoLight." );
    addField("lightColor",        TypeColorF,    Offset(lightColor,         ItemData),
       "@brief Color value to make this light. Example: \"1.0,1.0,1.0\"\n\n"
       "@see lightType\n");
-   addField("lightTime",         TypeS32,       Offset(lightTime,          ItemData), 
+   addField("lightTime",         TypeS32,       Offset(lightTime,          ItemData),
       "@brief Time value for the light of this ItemData, used to control the pulse speed of the PulsingLight LightType.\n\n"
       "@see lightType\n");
-   addField("lightRadius",       TypeF32,       Offset(lightRadius,        ItemData), 
+   addField("lightRadius",       TypeF32,       Offset(lightRadius,        ItemData),
       "@brief Distance from the center point of this ItemData for the light to affect\n\n"
       "@see lightType\n");
-   addField("lightOnlyStatic",   TypeBool,      Offset(lightOnlyStatic,    ItemData), 
+   addField("lightOnlyStatic",   TypeBool,      Offset(lightOnlyStatic,    ItemData),
       "@brief If true, this ItemData will only cast a light if the Item for this ItemData has a static value of true.\n\n"
       "@see lightType\n");
 
-   addField("simpleServerCollision",   TypeBool,  Offset(simpleServerCollision,    ItemData), 
+   addField("simpleServerCollision",   TypeBool,  Offset(simpleServerCollision,    ItemData),
       "@brief Determines if only simple server-side collision will be used (for pick ups).\n\n"
       "If set to true then only simple, server-side collision detection will be used.  This is often the case "
       "if the item is used for a pick up object, such as ammo.  If set to false then a full collision volume "
@@ -187,6 +188,8 @@ void ItemData::packData(BitStream* stream)
       stream->writeFloat(gravityMod, 10);
    if(stream->writeFlag(maxVelocity != -1))
       stream->write(maxVelocity);
+   stream->writeFloat(rotationSpeed, 10);
+   stream->writeFloat(atRestVelocity, 10);
 
    if(stream->writeFlag(lightType != Item::NoLight))
    {
@@ -220,6 +223,9 @@ void ItemData::unpackData(BitStream* stream)
    else
       maxVelocity = -1;
 
+    rotationSpeed = stream->readFloat(10);
+    atRestVelocity = stream->readFloat(10);
+
    if(stream->readFlag())
    {
       lightType = stream->readInt(2);
@@ -243,7 +249,7 @@ void ItemData::unpackData(BitStream* stream)
 IMPLEMENT_CO_NETOBJECT_V1(Item);
 
 ConsoleDocClass( Item,
-   "@brief Base Item class. Uses the ItemData datablock for common properties.\n\n"   
+   "@brief Base Item class. Uses the ItemData datablock for common properties.\n\n"
 
    "Items represent an object in the world, usually one that the player will interact with.  "
    "One example is a health kit on the group that is automatically picked up when the player "
@@ -447,7 +453,7 @@ void Item::onRemove()
 
 void Item::onDeleteNotify( SimObject *obj )
 {
-   if ( obj == mCollisionObject ) 
+   if ( obj == mCollisionObject )
    {
       mCollisionObject = NULL;
       mCollisionTimeout = 0;
@@ -490,7 +496,7 @@ void Item::registerLights(LightManager * lightManager, bool lightingScene)
    if (!mLight)
    {
       mLight = lightManager->createLightInfo();
-   }   
+   }
    mLight->setColor( mDataBlock->lightColor * intensity );
    mLight->setType( LightInfo::Point );
    mLight->setRange( mDataBlock->lightRadius );
@@ -982,7 +988,7 @@ void Item::updatePos(const U32 /*mask*/, const F32 dt)
    //
    if (contact) {
       // Check for rest condition
-      if (!nonStatic && mVelocity.len() < sAtRestVelocity) {
+      if (!nonStatic && mVelocity.len() < mDataBlock->atRestVelocity) {
          mVelocity.x = mVelocity.y = mVelocity.z = 0;
          mAtRest = true;
          mAtRestCounter = 0;
@@ -1174,8 +1180,8 @@ void Item::unpackUpdate(NetConnection *connection, BitStream *stream)
    Parent::setTransform(mat);
 }
 
-DefineEngineMethod( Item, isStatic, bool, (),, 
-   "@brief Is the object static (ie, non-movable)?\n\n"   
+DefineEngineMethod( Item, isStatic, bool, (),,
+   "@brief Is the object static (ie, non-movable)?\n\n"
    "@return True if the object is static, false if it is not.\n"
    "@tsexample\n"
 	   "// Query the item on if it is or is not static.\n"
@@ -1187,8 +1193,8 @@ DefineEngineMethod( Item, isStatic, bool, (),,
    return object->isStatic();
 }
 
-DefineEngineMethod( Item, isAtRest, bool, (),, 
-   "@brief Is the object at rest (ie, no longer moving)?\n\n"   
+DefineEngineMethod( Item, isAtRest, bool, (),,
+   "@brief Is the object at rest (ie, no longer moving)?\n\n"
    "@return True if the object is at rest, false if it is not.\n"
    "@tsexample\n"
 	   "// Query the item on if it is or is not at rest.\n"
@@ -1199,8 +1205,8 @@ DefineEngineMethod( Item, isAtRest, bool, (),,
    return object->isAtRest();
 }
 
-DefineEngineMethod( Item, isRotating, bool, (),, 
-   "@brief Is the object still rotating?\n\n"   
+DefineEngineMethod( Item, isRotating, bool, (),,
+   "@brief Is the object still rotating?\n\n"
    "@return True if the object is still rotating, false if it is not.\n"
    "@tsexample\n"
 	   "// Query the item on if it is or is not rotating.\n"
@@ -1212,7 +1218,7 @@ DefineEngineMethod( Item, isRotating, bool, (),,
    return object->isRotating();
 }
 
-DefineEngineMethod( Item, setCollisionTimeout, bool, (S32 ignoreColObj),, 
+DefineEngineMethod( Item, setCollisionTimeout, bool, (S32 ignoreColObj),,
    "@brief Temporarily disable collisions against a specific ShapeBase object.\n\n"
 
    "This is useful to prevent a player from immediately picking up an Item they have "
@@ -1239,8 +1245,8 @@ DefineEngineMethod( Item, setCollisionTimeout, bool, (S32 ignoreColObj),,
 }
 
 
-DefineEngineMethod( Item, getLastStickyPos, const char*, (),, 
-   "@brief Get the position on the surface on which this Item is stuck.\n\n"   
+DefineEngineMethod( Item, getLastStickyPos, const char*, (),,
+   "@brief Get the position on the surface on which this Item is stuck.\n\n"
    "@return Returns The XYZ position of where this Item is stuck.\n"
    "@tsexample\n"
 	   "// Acquire the position where this Item is currently stuck\n"
@@ -1262,8 +1268,8 @@ DefineEngineMethod( Item, getLastStickyPos, const char*, (),,
    return ret;
 }
 
-DefineEngineMethod( Item, getLastStickyNormal, const char *, (),, 
-   "@brief Get the normal of the surface on which the object is stuck.\n\n"   
+DefineEngineMethod( Item, getLastStickyNormal, const char *, (),,
+   "@brief Get the normal of the surface on which the object is stuck.\n\n"
    "@return Returns The XYZ normal from where this Item is stuck.\n"
    "@tsexample\n"
 	   "// Acquire the position where this Item is currently stuck\n"
@@ -1304,7 +1310,7 @@ bool Item::_setRotate(void *object, const char *index, const char *data)
 
 void Item::initPersistFields()
 {
-   addGroup("Misc");	
+   addGroup("Misc");
    addProtectedField("static", TypeBool, Offset(mStatic, Item), &_setStatic, &defaultProtectedGetFn, "If true, the object is not moving in the world.\n");
    addProtectedField("rotate", TypeBool, Offset(mRotate, Item), &_setRotate, &defaultProtectedGetFn, "If true, the object will automatically rotate around its Z axis.\n");
    endGroup("Misc");
@@ -1317,7 +1323,7 @@ void Item::consoleInit()
    Con::addVariable("Item::minWarpTicks",TypeF32,&sMinWarpTicks,
       "@brief Fraction of tick at which instant warp occures on the client.\n\n"
 	   "@ingroup GameObjects");
-   Con::addVariable("Item::maxWarpTicks",TypeS32,&sMaxWarpTicks, 
+   Con::addVariable("Item::maxWarpTicks",TypeS32,&sMaxWarpTicks,
       "@brief When a warp needs to occur due to the client being too far off from the server, this is the "
       "maximum number of ticks we'll allow the client to warp to catch up.\n\n"
 	   "@ingroup GameObjects");
@@ -1376,9 +1382,9 @@ void Item::advanceTime(F32 dt)
    if ( isMounted() )
       return;
 
-   if( mRotate )
+   if( mRotate && mDataBlock->rotationSpeed )
    {
-      F32 r = (dt / sRotationSpeed) * M_2PI;
+      F32 r = (dt / mDataBlock->rotationSpeed) * M_2PI;
       Point3F pos = mRenderObjToWorld.getPosition();
       MatrixF rotMatrix;
       if( mRotate )

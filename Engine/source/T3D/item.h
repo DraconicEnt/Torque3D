@@ -48,6 +48,8 @@ struct ItemData: public ShapeBaseData {
    bool sticky;
    F32  gravityMod;
    F32  maxVelocity;
+   F32 rotationSpeed;
+   F32 atRestVelocity;
 
    bool        lightOnlyStatic;
    S32         lightType;
