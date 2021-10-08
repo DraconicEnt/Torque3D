@@ -512,7 +512,7 @@ void ColladaAppMesh::getPrimitives(const domGeometry* geometry)
       if (!pTriData)
          continue;
 
-      U32 numTriangles = pTriData->getCount() / meshPrims[iPrim]->getStride() / 3;
+      size_t numTriangles = pTriData->getCount() / meshPrims[iPrim]->getStride() / 3;
       if (!numTriangles)
          continue;
 
@@ -563,7 +563,8 @@ void ColladaAppMesh::getPrimitives(const domGeometry* geometry)
                vertTuples.push_back(VertTuple(vertTuples.last()));
 
             // Split the primitive at the current triangle
-            S32 indicesRemaining = (numTriangles - iTri) * 3;
+            AssertFatal(numTriangles >= iTri, "iTri must be smaller than numTriangles!");
+            size_t indicesRemaining = (numTriangles - iTri) * 3;
             if (iTri > 0)
             {
                daeErrorHandler::get()->handleWarning(avar("Splitting primitive "

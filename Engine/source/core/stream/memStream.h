@@ -81,8 +81,8 @@ class MemStream : public Stream
    protected:
 
       // Stream
-      bool _read( const U32 in_numBytes,  void *out_pBuffer );
-      bool _write( const U32 in_numBytes, const void *in_pBuffer );
+      bool _read( const size_t in_numBytes,  void *out_pBuffer );
+      bool _write( const size_t in_numBytes, const void *in_pBuffer );
 
    public:
 

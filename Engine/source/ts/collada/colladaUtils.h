@@ -233,7 +233,7 @@ namespace ColladaUtils
          return -1;
       }
 
-      S32 numberOfDetailLevels()
+      size_t numberOfDetailLevels()
       {
          Vector<S32> detailLevelIdxs;
 

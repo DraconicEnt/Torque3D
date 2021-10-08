@@ -84,7 +84,7 @@ public:
          mPool.push_back(id);
    }
 
-   U32 numIdsUsed()
+   size_t numIdsUsed()
    {
       return mNextId - mIdBlockBase - mPool.size();
    }

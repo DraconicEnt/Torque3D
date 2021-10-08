@@ -123,8 +123,8 @@ public:
   static void   frameReset();
   static void   missionCleanup();
 
-  static S32    numTerrainZodiacs() { return terr_zodes.size(); }
-  static S32    numInteriorZodiacs() { return inter_zodes.size(); }
+  static size_t    numTerrainZodiacs() { return terr_zodes.size(); }
+  static size_t    numInteriorZodiacs() { return inter_zodes.size(); }
 
   static void   transformTerrainZodiacs(const MatrixF& world_xfm);
   static void   testTerrainOverlap(GridSquare*, S32 level, Point2I sq_pos, afxZodiacBitmask&);

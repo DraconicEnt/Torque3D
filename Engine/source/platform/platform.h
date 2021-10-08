@@ -426,7 +426,7 @@ namespace Platform
 //------------------------------------------------------------------------------
 // Misc StdLib functions
 #define QSORT_CALLBACK FN_CDECL
-inline void dQsort(void *base, U32 nelem, U32 width, S32 (QSORT_CALLBACK *fcmp)(const void *, const void *))
+inline void dQsort(void *base, size_t nelem, size_t width, S32 (QSORT_CALLBACK *fcmp)(const void *, const void *))
 {
    qsort(base, nelem, width, fcmp);
 }

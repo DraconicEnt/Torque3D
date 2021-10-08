@@ -119,7 +119,7 @@ U32 ResizeFilterStream::getStreamSize()
    return m_streamLen;
 }
 
-bool ResizeFilterStream::_read(const U32 in_numBytes, void* out_pBuffer)
+bool ResizeFilterStream::_read(const size_t in_numBytes, void* out_pBuffer)
 {
    AssertFatal(m_pStream != NULL, "Error, stream not attached");
    m_lastBytesRead = 0;

@@ -94,14 +94,14 @@ public:
    void set(const UTF8  *in);
    void set(const UTF16 *in);
 
-   inline const U32 length() const 
+   inline const size_t length() const 
    { 
       return mBuffer.size() - 1; // Don't count the NULL of course.
    }
 
    /// Get an upper bound size estimate for a UTF8 buffer to hold this
    /// string.
-   const U32 getUTF8BufferSizeEstimate() const
+   const size_t getUTF8BufferSizeEstimate() const
    {
       return length() * 3 + 1;
    }

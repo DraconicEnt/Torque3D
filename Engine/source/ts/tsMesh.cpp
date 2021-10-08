@@ -596,7 +596,7 @@ void TSMesh::support( S32 frame, const Point3F &v, F32 *currMaxDP, Point3F *curr
    if ( vertsPerFrame == 0 )
       return;
 
-   U32 waterMark = FrameAllocator::getWaterMark();
+   size_t waterMark = FrameAllocator::getWaterMark();
    F32* pDots = (F32*)FrameAllocator::alloc( sizeof(F32) * vertsPerFrame );
 
    S32 firstVert = vertsPerFrame * frame;
@@ -1132,7 +1132,7 @@ void TSMesh::computeBounds( const Point3F *v, S32 numVerts, S32 stride, const Ma
 
 S32 TSMesh::getNumPolys() const
 {
-   S32 count = 0;
+   size_t count = 0;
    for ( S32 i = 0; i < mPrimitives.size(); i++ )
    {
       switch (mPrimitives[i].matIndex & TSDrawPrimitive::TypeMask)
@@ -1973,7 +1973,7 @@ void TSMesh::convertToTris(	const TSDrawPrimitive *primitivesIn,
 
       U32 start = primitivesIn[i].start;
       U32 prevStart = (i > 0) ? primitivesIn[i-1].start : start;
-      U32 numElements = primitivesIn[i].numElements;
+      size_t numElements = primitivesIn[i].numElements;
 
       // Add a new primitive if changing materials, or if this primitive
       // indexes vertices in a different 16-bit range
@@ -2078,7 +2078,7 @@ void TSMesh::convertToSingleStrip(	const TSDrawPrimitive *primitivesIn,
 
       U32 start = primitivesIn[i].start;
       U32 prevStart = (i > 0) ? primitivesIn[i-1].start : start;
-      U32 numElements = primitivesIn[i].numElements;
+      size_t numElements = primitivesIn[i].numElements;
 
       // Add a new primitive if changing materials, or if this primitive
       // indexes vertices in a different 16-bit range
@@ -2223,7 +2223,7 @@ void TSMesh::leaveAsMultipleStrips(	const TSDrawPrimitive *primitivesIn,
 
       U32 start = primitivesIn[i].start;
       U32 prevStart = (i > 0) ? primitivesIn[i-1].start : start;
-      U32 numElements = primitivesIn[i].numElements;
+      size_t numElements = primitivesIn[i].numElements;
 
       // Add a new primitive if changing materials, or if this primitive
       // indexes vertices in a different 16-bit range

@@ -365,7 +365,7 @@ public:
    bool isDirectory(const Path &path, FileSystemRef fsRef = NULL);
    bool isReadOnly(const Path &path);
 
-   S32      getNumMounts() const { return mMountList.size(); }
+   size_t      getNumMounts() const { return mMountList.size(); }
    String   getMountRoot( S32 index ) const { return mMountList[index].root; }
    String   getMountPath( S32 index ) const { return mMountList[index].fileSystem->mapTo(mMountList[index].path); }
    String   getMountType( S32 index ) const { return mMountList[index].fileSystem->getTypeStr(); }

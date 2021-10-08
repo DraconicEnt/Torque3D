@@ -72,7 +72,7 @@ struct SilhouetteExtractorBasePerspective : public SilhouetteExtractorBase< Poly
       mutable Orientation* mPolygonOrientations;
 
       /// Frame allocator water mark to release temporary memory after silhouette extraction.
-      mutable U32 mWaterMark;
+      mutable size_t mWaterMark;
 
       /// @}
 
@@ -92,7 +92,7 @@ struct SilhouetteExtractorBasePerspective : public SilhouetteExtractorBase< Poly
 
          // Determine orientation of each of the polygons.
 
-         const U32 numPolygons = this->mPolyhedron->getNumPlanes();
+         const size_t numPolygons = this->mPolyhedron->getNumPlanes();
          mPolygonOrientations = ( Orientation* ) FrameAllocator::alloc( sizeof( Orientation ) * numPolygons );
 
          Point3F camPos = camView.getPosition();
@@ -152,7 +152,7 @@ struct SilhouetteExtractorBaseOrtho : public SilhouetteExtractorBase< Polyhedron
       mutable F32* mFaceDotProducts;
 
       /// Frame allocator water mark.
-      mutable U32 mWaterMark;
+      mutable size_t mWaterMark;
 
       /// @}
 
@@ -169,7 +169,7 @@ struct SilhouetteExtractorBaseOrtho : public SilhouetteExtractorBase< Polyhedron
       void begin( const Point3F& viewDirOS ) const
       {
          const typename Polyhedron::PlaneType* planes = this->mPolyhedron->getPlanes();
-         const U32 numPlanes = this->mPolyhedron->getNumPlanes();
+         const size_t numPlanes = this->mPolyhedron->getNumPlanes();
 
          mWaterMark = FrameAllocator::getWaterMark();
          mFaceDotProducts = ( F32* ) FrameAllocator::alloc( sizeof( F32 ) * numPlanes );

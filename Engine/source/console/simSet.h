@@ -149,7 +149,7 @@ class SimSet : public SimObject, public TamlChildren
       SimObject* first() { return mObjectList.first(); }
       SimObject* last()  { return mObjectList.last(); }
       bool       empty() const { return mObjectList.empty();   }
-      S32        size() const  { return mObjectList.size(); }
+      size_t        size() const  { return mObjectList.size(); }
       iterator   begin() { return mObjectList.begin(); }
       iterator   end()   { return mObjectList.end(); }
       value operator[] (S32 index) { return mObjectList[U32(index)]; }

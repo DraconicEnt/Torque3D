@@ -34,7 +34,7 @@ class UnmanagedVector
 {
    protected:
 
-      U32 mCount;
+      size_t mCount;
       T* mArray;
 
    public:
@@ -44,10 +44,10 @@ class UnmanagedVector
 
       UnmanagedVector()
          : mCount( 0 ), mArray( NULL ) {}
-      UnmanagedVector( T* array, U32 count )
+      UnmanagedVector( T* array, size_t count )
          : mCount( count ), mArray( array ) {}
 
-      U32 size() const { return mCount; }
+      size_t size() const { return mCount; }
       bool empty() const { return ( mCount == 0 ); }
       const T* address() const { return mArray; }
       T* address() { return mArray; }

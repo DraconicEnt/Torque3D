@@ -76,7 +76,7 @@ void DecalSphere::updateWorldSphere()
 
    Box3F aabb( mItems[ 0 ]->getWorldBox() );
 
-   const U32 numItems = mItems.size();
+   const size_t numItems = mItems.size();
    for( U32 i = 1; i < numItems; ++ i )
       aabb.intersect( mItems[ i ]->getWorldBox() );
 

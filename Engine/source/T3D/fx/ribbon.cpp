@@ -442,8 +442,8 @@ void Ribbon::deleteOnEnd() {
 
 U32 Ribbon::checkRibbonDistance(S32 segments) {
 
-   S32 len = mSegmentPoints.size();
-   S32 difference = (mDataBlock->mRibbonLength/(mDataBlock->mSegmentSkipAmount+1)) - len;
+   size_t len = mSegmentPoints.size();
+   size_t difference = (mDataBlock->mRibbonLength/(mDataBlock->mSegmentSkipAmount+1)) - len;
 
    if (difference < 0)
       return mAbs(difference);

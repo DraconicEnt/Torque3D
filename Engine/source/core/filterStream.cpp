@@ -27,7 +27,7 @@ FilterStream::~FilterStream()
    //
 }
 
-bool FilterStream::_read(const U32 in_numBytes, void* out_pBuffer)
+bool FilterStream::_read(const size_t in_numBytes, void* out_pBuffer)
 {
    AssertFatal(getStream() != NULL, "Error no stream to pass to");
 
@@ -38,7 +38,7 @@ bool FilterStream::_read(const U32 in_numBytes, void* out_pBuffer)
 }
 
 
-bool FilterStream::_write(const U32, const void*)
+bool FilterStream::_write(const size_t, const void*)
 {
    AssertFatal(false, "No writing allowed to filter");
    return false;

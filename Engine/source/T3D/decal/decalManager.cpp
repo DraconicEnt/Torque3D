@@ -361,8 +361,8 @@ bool DecalManager::clipDecal( DecalInstance *decal, Vector<Point3F> *edgeVerts, 
    mClipper.cullUnusedVerts();
    mClipper.triangulate();
    
-   const U32 numVerts = mClipper.mVertexList.size();
-   const U32 numIndices = mClipper.mIndexList.size();
+   const size_t numVerts = mClipper.mVertexList.size();
+   const size_t numIndices = mClipper.mIndexList.size();
 
    if ( !numVerts || !numIndices )
       return false;
@@ -704,7 +704,7 @@ DecalInstance* DecalManager::raycast( const Point3F &start, const Point3F &end, 
    return hitDecals[0];
 }
 
-U32 DecalManager::_generateConvexHull( const Vector<Point3F> &points, Vector<Point3F> *outPoints )
+size_t DecalManager::_generateConvexHull( const Vector<Point3F> &points, Vector<Point3F> *outPoints )
 {
    PROFILE_SCOPE( DecalManager_generateConvexHull );
 

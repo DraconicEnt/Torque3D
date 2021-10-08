@@ -372,7 +372,7 @@ class SFXSystem
       /// @{
 
       /// Return the number of listeners currently configured.
-      U32 getNumListeners() const { return mListeners.size(); }
+      size_t getNumListeners() const { return mListeners.size(); }
       
       /// Set the number of concurrent listeners.
       /// @note It depends on the selected device if more than one listener is actually supported.

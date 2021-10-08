@@ -581,7 +581,7 @@ class SFXSource : public SimGroup
       /// @{
       
       ///
-      U32 getNumParameters() const { return mParameters.size(); }
+      size_t getNumParameters() const { return mParameters.size(); }
       
       ///
       SFXParameter* getParameter( U32 index )

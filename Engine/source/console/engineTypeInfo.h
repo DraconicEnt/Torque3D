@@ -266,7 +266,7 @@ class EnginePropertyTable
    protected:
    
       /// Number of properties in this table.
-      U32 mNumProperties;
+      size_t mNumProperties;
       
       /// Array of property definitions.
       const Property* mProperties;
@@ -274,12 +274,12 @@ class EnginePropertyTable
    public:
    
       ///
-      EnginePropertyTable( U32 numProperties, const Property* properties )
+      EnginePropertyTable( size_t numProperties, const Property* properties )
          :  mNumProperties( numProperties ),
             mProperties( properties ) {}
       
       ///
-      U32 getNumProperties() const { return mNumProperties; }
+      size_t getNumProperties() const { return mNumProperties; }
       
       ///
       const Property& operator []( U32 index ) const

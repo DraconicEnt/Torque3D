@@ -549,7 +549,7 @@ protected:
    void deltaGround1(TSThread *, F32 start, F32 end, MatrixF& mat);
    /// @}
 
-   U32 getNumDetails() const { return mShape ? mShape->details.size() : 0; }
+   size_t getNumDetails() const { return mShape ? mShape->details.size() : 0; }
 
    S32 getCurrentDetail() const { return mCurrentDetailLevel; }
 

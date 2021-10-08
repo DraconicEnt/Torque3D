@@ -44,7 +44,7 @@ class   FindMatch
    bool findMatch(const char *string, bool caseSensitive = false);
    void setExpression( const char *_expression );
 
-   S32  numMatches() const   
+   size_t  numMatches() const   
    {
       return(matchList.size());                
    }

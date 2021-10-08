@@ -579,7 +579,7 @@ inline S32 ColorI::convertFromHex(const String& hex) const
 	S32 hexValue = 0;
 
 	S32 a = 0;
-	S32 b = hex.length() - 1;
+	size_t b = hex.length() - 1;
 
 	for (; b >= 0; a++, b--)
 	{

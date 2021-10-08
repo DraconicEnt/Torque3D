@@ -284,8 +284,8 @@ class String::StringData : protected StringDataImpl
             delete [] mUTF16;
       }
 
-      TORQUE_NOINLINE void* operator new(size_t size, U32 len);
-      TORQUE_NOINLINE void* operator new( size_t size, U32 len, DataChunker& chunker );
+      TORQUE_NOINLINE void* operator new(size_t size, size_t len);
+      TORQUE_NOINLINE void* operator new(size_t size, size_t len, DataChunker& chunker );
       void operator delete(void *);
 
       bool isShared() const
@@ -492,7 +492,7 @@ DefineEngineFunction( dumpStringMemStats, void, (), , "()"
 
 //-----------------------------------------------------------------------------
 
-void* String::StringData::operator new( size_t size, U32 len )
+void* String::StringData::operator new( size_t size, size_t len )
 {
    AssertFatal( len != 0, "String::StringData::operator new() - string must not be empty" );
    StringData *str = static_cast<StringData*>( dMalloc( size + len * sizeof(StringChar) ) );
@@ -520,7 +520,7 @@ void String::StringData::operator delete(void *ptr)
    dFree( ptr );
 }
 
-void* String::StringData::operator new( size_t size, U32 len, DataChunker& chunker )
+void* String::StringData::operator new( size_t size, size_t len, DataChunker& chunker )
 {
    AssertFatal( len != 0, "String::StringData::operator new() - string must not be empty" );
    StringData *str = static_cast<StringData*>( chunker.alloc( size + len * sizeof(StringChar) ) );
@@ -1498,7 +1498,7 @@ S32 String::StrFormat::formatAppend( const char *format, va_list args )
    return _len;
 }
 
-S32 String::StrFormat::append(const char * str, S32 len)
+S32 String::StrFormat::append(const char * str, size_t len)
 {
    if (_dynamicBuffer == NULL)
    {

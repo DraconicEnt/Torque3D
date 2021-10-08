@@ -304,7 +304,7 @@ namespace Con
 {
    ReturnBuffer retBuffer;
 
-   char *getReturnBuffer(U32 bufferSize)
+   char *getReturnBuffer(size_t bufferSize)
    {
       return retBuffer.getBuffer(bufferSize);
    }
@@ -346,7 +346,7 @@ namespace Con
       return ret;
    }
 
-   char *getIntArg(S32 arg)
+   char *getIntArg(size_t arg)
    {
       char *ret = STR.getArgBuffer(32);
       dSprintf(ret, 32, "%d", arg);

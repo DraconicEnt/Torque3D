@@ -163,7 +163,7 @@ class Trigger : public GameBase
    bool castRay(const Point3F &start, const Point3F &end, RayInfo* info);
 };
 
-inline U32 Trigger::getNumTriggeringObjects() const
+inline size_t Trigger::getNumTriggeringObjects() const
 {
    return mObjects.size();
 }

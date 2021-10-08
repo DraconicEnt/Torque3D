@@ -106,8 +106,8 @@ struct GFXPrimitive
    U32 startVertex;    /// offset into vertex buffer to change where vertex[0] is
    U32 minIndex;       /// minimal value we will see in the indices
    U32 startIndex;     /// start of indices in buffer
-   U32 numPrimitives;  /// how many prims to render
-   U32 numVertices;    /// how many vertices... (used for locking, we lock from minIndex to minIndex + numVertices)
+   size_t numPrimitives;  /// how many prims to render
+   size_t numVertices;    /// how many vertices... (used for locking, we lock from minIndex to minIndex + numVertices)
 
    GFXPrimitive()
    {

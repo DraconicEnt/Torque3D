@@ -52,7 +52,7 @@ public:
       Right = 2,        ///< Start at right end of string
    };
 
-   typedef U32 SizeType;
+   typedef size_t SizeType;
    typedef StringChar ValueType;
 
    static const SizeType NPos;   ///< Indicates 'not found' when using find() functions
@@ -157,6 +157,7 @@ public:
 
    operator const StringChar*() const { return c_str(); }
 
+   StringChar operator []( size_t i ) const { return c_str()[i]; }
    StringChar operator []( U32 i ) const { return c_str()[i]; }
    StringChar operator []( S32 i ) const { return c_str()[i]; }
 
@@ -262,7 +263,7 @@ public:
 
       S32 format( const char *format, va_list args );
       S32 formatAppend( const char *format, va_list args );
-      S32 append(const char * str, S32 len);
+      S32 append(const char * str, size_t len);
       S32 append(const char * str);
 
       String getString() { return String(c_str(),_len); }
@@ -338,26 +339,26 @@ class StringBuilder
          return mFormat.getString();
       }
 
-      S32 append( char ch )
+      size_t append( char ch )
       {
          char str[2];
          str[0]=ch;
          str[1]='\0';
          return mFormat.append(str);
       }
-      S32 append( const char* str )
+      size_t append( const char* str )
       {
          return mFormat.append(str);
       }
-      S32 append( const String& str )
+      size_t append( const String& str )
       {
          return mFormat.append( str.c_str(), str.length() );
       }
-      S32 append( const char* str, U32 length )
+      size_t append( const char* str, U32 length )
       {
          return mFormat.append(str,length);
       }
-      S32 format( const char* fmt, ... )
+      size_t format( const char* fmt, ... )
       {
          va_list args;
          va_start(args, fmt);

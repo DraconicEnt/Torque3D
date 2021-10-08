@@ -55,29 +55,29 @@
 class FrameAllocator
 {
    static U8*   smBuffer;
-   static U32   smHighWaterMark;
-   static U32   smWaterMark;
+   static size_t   smHighWaterMark;
+   static size_t   smWaterMark;
 
 #ifdef TORQUE_DEBUG
    static U32 smMaxFrameAllocation;
 #endif
 
   public:
-   inline static void init(const U32 frameSize);
+   inline static void init(const size_t frameSize);
    inline static void destroy();
 
-   inline static void* alloc(const U32 allocSize);
+   inline static void* alloc(const size_t allocSize);
 
-   inline static void setWaterMark(const U32);
-   inline static U32  getWaterMark();
-   inline static U32  getHighWaterMark();
+   inline static void setWaterMark(const size_t);
+   inline static size_t  getWaterMark();
+   inline static size_t  getHighWaterMark();
 
 #ifdef TORQUE_DEBUG
    static U32 getMaxFrameAllocation() { return smMaxFrameAllocation; }
 #endif
 };
 
-void FrameAllocator::init(const U32 frameSize)
+void FrameAllocator::init(const size_t frameSize)
 {
 #ifdef FRAMEALLOCATOR_DEBUG_GUARD
    AssertISV( false, "FRAMEALLOCATOR_DEBUG_GUARD has been removed because it allows non-contiguous memory allocation by the FrameAllocator, and this is *not* ok." );
@@ -100,9 +100,9 @@ void FrameAllocator::destroy()
 }
 
 
-void* FrameAllocator::alloc(const U32 allocSize)
+void* FrameAllocator::alloc(const size_t allocSize)
 {
-   U32 _allocSize = allocSize;
+   size_t _allocSize = allocSize;
 
    AssertFatal(smBuffer != NULL, "Error, no buffer!");
    AssertFatal(smWaterMark + _allocSize <= smHighWaterMark, "Error alloc too large, increase frame size!");
@@ -123,18 +123,18 @@ void* FrameAllocator::alloc(const U32 allocSize)
 }
 
 
-void FrameAllocator::setWaterMark(const U32 waterMark)
+void FrameAllocator::setWaterMark(const size_t waterMark)
 {
    AssertFatal(waterMark < smHighWaterMark, "Error, invalid waterMark");
    smWaterMark = waterMark;
 }
 
-U32 FrameAllocator::getWaterMark()
+size_t FrameAllocator::getWaterMark()
 {
    return smWaterMark;
 }
 
-U32 FrameAllocator::getHighWaterMark()
+size_t FrameAllocator::getHighWaterMark()
 {
    return smHighWaterMark;
 }
@@ -156,7 +156,7 @@ U32 FrameAllocator::getHighWaterMark()
 /// don't have to remember to reset the FrameAllocator on every posssible branch.
 class FrameAllocatorMarker
 {
-   U32 mMarker;
+   size_t mMarker;
 
 public:
    FrameAllocatorMarker()
@@ -208,9 +208,9 @@ template<class T>
 class FrameTemp
 {
 protected:
-   U32 mWaterMark;
+   size_t mWaterMark;
    T *mMemory;
-   U32 mNumObjectsInMemory;
+   size_t mNumObjectsInMemory;
 
 public:
    /// Constructor will store the FrameAllocator watermark and allocate the memory off
@@ -228,7 +228,7 @@ public:
    /// @endcode
    ///
    /// @param   count   The number of objects to allocate
-   FrameTemp( const U32 count = 1 ) : mNumObjectsInMemory( count )
+   FrameTemp( const size_t count = 1 ) : mNumObjectsInMemory( count )
    {
       AssertFatal( count > 0, "Allocating a FrameTemp with less than one instance" );
       mWaterMark = FrameAllocator::getWaterMark();
@@ -290,7 +290,7 @@ public:
 // FrameTemp specializations for types with no constructor/destructor
 #define FRAME_TEMP_NC_SPEC(type) \
    template<> \
-   inline FrameTemp<type>::FrameTemp( const U32 count ) \
+   inline FrameTemp<type>::FrameTemp( const size_t count ) \
    { \
       AssertFatal( count > 0, "Allocating a FrameTemp with less than one instance" ); \
       mWaterMark = FrameAllocator::getWaterMark(); \

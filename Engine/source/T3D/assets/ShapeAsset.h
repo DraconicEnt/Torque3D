@@ -151,8 +151,8 @@ public:
 
    void addMaterialAssets(AssetPtr<MaterialAsset> matPtr) { mMaterialAssets.push_back(matPtr); }
 
-   S32 getMaterialCount() { return mMaterialAssets.size(); }
-   S32 getAnimationCount() { return mAnimationAssets.size(); }
+   size_t getMaterialCount() { return mMaterialAssets.size(); }
+   size_t getAnimationCount() { return mAnimationAssets.size(); }
    ShapeAnimationAsset* getAnimation(S32 index);
 
    void _onResourceChanged(const Torque::Path& path);

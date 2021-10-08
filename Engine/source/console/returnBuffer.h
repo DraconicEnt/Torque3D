@@ -43,7 +43,7 @@ public:
 
    /// Get a temporary buffer with a given size (and alignment)
    /// @note The buffer will be re-used so do not consider it permanent
-   char *getBuffer(U32 size, U32 alignment = 16);
+   char *getBuffer(size_t size, U32 alignment = 16);
 };
 
 #endif //_RETURNBUFFER_H_

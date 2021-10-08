@@ -123,7 +123,7 @@ void ZipSubRStream::setUncompressedSize(const U32 in_uncSize)
 }
 
 //--------------------------------------
-bool ZipSubRStream::_read(const U32 in_numBytes, void *out_pBuffer)
+bool ZipSubRStream::_read(const size_t in_numBytes, void *out_pBuffer)
 {
    m_lastBytesRead = 0;
    if (in_numBytes == 0)
@@ -401,7 +401,7 @@ Stream* ZipSubWStream::getStream()
 }
 
 //--------------------------------------
-bool ZipSubWStream::_read(const U32, void*)
+bool ZipSubWStream::_read(const size_t, void*)
 {
    AssertFatal(false, "Cannot read from a ZipSubWStream");
 
@@ -410,7 +410,7 @@ bool ZipSubWStream::_read(const U32, void*)
 }
 
 //--------------------------------------
-bool ZipSubWStream::_write(const U32 numBytes, const void *pBuffer)
+bool ZipSubWStream::_write(const size_t numBytes, const void *pBuffer)
 {
    m_lastBytesWritten = 0;
    if (numBytes == 0)

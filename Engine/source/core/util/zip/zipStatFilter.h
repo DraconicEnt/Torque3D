@@ -109,7 +109,7 @@ protected:
 
    CentralDir *mCD;
 
-   virtual bool _write(const U32 numBytes, const void *buffer)
+   virtual bool _write(const size_t numBytes, const void *buffer)
    {
       if(! mStream->write(numBytes, buffer))
          return false;
@@ -120,7 +120,7 @@ protected:
       return true;
    }
 
-   virtual bool _read(const U32 numBytes, void *buffer)
+   virtual bool _read(const size_t numBytes, void *buffer)
    {
       if(! mStream->read(numBytes, buffer))
          return false;

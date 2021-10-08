@@ -90,7 +90,7 @@ size_t SFXVorbisStream::_read_func( void *ptr, size_t size, size_t nmemb, void *
 
    // How many did we actually read?
    U32 readBytes = ( endByte - startByte );
-   U32 readItems = readBytes / size;
+   size_t readItems = readBytes / size;
 
    return readItems;
 }

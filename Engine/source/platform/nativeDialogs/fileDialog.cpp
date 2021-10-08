@@ -294,7 +294,7 @@ bool FileDialog::Execute()
    else if (mData.mStyle & FileDialogData::FDS_MULTIPLEFILES)
    {
       //check if we have multiple files actually selected or not
-      U32 fileCount = NFD_PathSet_GetCount(&pathSet);
+      size_t fileCount = NFD_PathSet_GetCount(&pathSet);
       if (fileCount > 1)
       {
          //yep, so parse through them and prep our return

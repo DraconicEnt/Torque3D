@@ -101,7 +101,7 @@ private:
    void copyIntoCache();
 
    //FrameAllocator
-   U32 mFrameAllocatorMark;
+   size_t mFrameAllocatorMark;
 #if TORQUE_DEBUG
    U32 mFrameAllocatorMarkGuard;
 #endif

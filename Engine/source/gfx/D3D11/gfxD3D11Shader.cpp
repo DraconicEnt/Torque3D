@@ -1306,7 +1306,7 @@ bool GFXD3D11Shader::_loadCompiledOutput( const Torque::Path &filePath,
    U32 bufferSize;
    if (!f.read(&bufferSize))
       return false;
-   U32 waterMark = FrameAllocator::getWaterMark();
+   size_t waterMark = FrameAllocator::getWaterMark();
    DWORD* buffer = static_cast<DWORD*>(FrameAllocator::alloc(bufferSize));
    if (!f.read(bufferSize, buffer))
       return false;

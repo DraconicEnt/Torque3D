@@ -104,7 +104,7 @@ acceptable.  Do NOT use for cryptographic purposes.
 --------------------------------------------------------------------
 */
 
-U32 hash(const U8 *k, U32 length, U32 initval)
+U32 hash(const U8 *k, size_t length, U32 initval)
 {
    U32 a,b,c,len;
 
@@ -211,7 +211,7 @@ is acceptable.  Do NOT use for cryptographic purposes.
 --------------------------------------------------------------------
 */
 
-U64 hash64( const U8 *k, U32 length, U64 initval )
+U64 hash64( const U8 *k, size_t length, U64 initval )
 {
   U64 a,b,c,len;
 

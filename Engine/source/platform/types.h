@@ -172,14 +172,15 @@ inline U32 getNextPow2(U32 value)
   inline type getMin(type a, type b) { return a > b ? b : a; } \
   inline type getMax(type a, type b) { return a > b ? a : b; }
 
-DeclareTemplatizedMinMax( U32 )
-DeclareTemplatizedMinMax( S32 )
-DeclareTemplatizedMinMax( U16 )
-DeclareTemplatizedMinMax( S16 )
-DeclareTemplatizedMinMax( U8 )
-DeclareTemplatizedMinMax( S8 )
-DeclareTemplatizedMinMax( F32 )
-DeclareTemplatizedMinMax( F64 )
+DeclareTemplatizedMinMax(U32)
+DeclareTemplatizedMinMax(S32)
+DeclareTemplatizedMinMax(U16)
+DeclareTemplatizedMinMax(S16)
+DeclareTemplatizedMinMax(U8)
+DeclareTemplatizedMinMax(S8)
+DeclareTemplatizedMinMax(F32)
+DeclareTemplatizedMinMax(F64)
+DeclareTemplatizedMinMax(size_t);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------FOURCC------------------------------------------------//

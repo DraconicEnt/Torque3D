@@ -154,7 +154,7 @@ class DecalManager : public SceneObject
           return (P1.x - P0.x)*(P2.y - P0.y) - (P2.x - P0.x)*(P1.y - P0.y);
       }
 
-      U32 _generateConvexHull( const Vector<Point3F> &points, Vector<Point3F> *outPoints );
+      size_t _generateConvexHull( const Vector<Point3F> &points, Vector<Point3F> *outPoints );
 
       // Rendering
       void prepRenderImage( SceneRenderState *state );

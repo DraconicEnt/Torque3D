@@ -73,7 +73,7 @@ void StdMoveList::advanceMove()
 void StdMoveList::clientWriteMovePacket(BitStream *bstream)
 {
    AssertFatal(mLastMoveAck == mFirstMoveIndex, "Invalid move index.");
-   U32 count = mMoveVec.size();
+   size_t count = mMoveVec.size();
 
    Move * move = mMoveVec.address();
    U32 start = mLastMoveAck;
@@ -126,7 +126,7 @@ void StdMoveList::serverReadMovePacket(BitStream *bstream)
          prevMoveHolder.unpack(bstream,prevMove);
          prevMoveHolder.checksum = bstream->readInt(Move::ChecksumBits);
          prevMove = &prevMoveHolder;
-         S32 idx = mMoveVec.size()-skip+i;
+         size_t idx = mMoveVec.size()-skip+i;
          if (idx>=0)
          {
 #ifdef TORQUE_DEBUG_NET_MOVES
@@ -141,7 +141,7 @@ void StdMoveList::serverReadMovePacket(BitStream *bstream)
    }
 
    // Put the rest on the move list.
-   S32 index = mMoveVec.size();
+   size_t index = mMoveVec.size();
    mMoveVec.increment(count);
    while (index < mMoveVec.size())
    {

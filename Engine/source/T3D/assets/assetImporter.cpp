@@ -740,7 +740,7 @@ String AssetImporter::parseImageSuffixes(String assetName, String* suffixType)
          if (FindMatch::isMatch(searchSuffix.c_str(), assetName.c_str(), false))
          {
             //We have a match, so indicate as such
-            S32 pos = assetName.length();
+            String::SizeType pos = assetName.length();
             pos -= searchSuffix.length();
             suffix = assetName.substr(pos+1);
             return suffix;
@@ -950,9 +950,9 @@ struct SceneStats
    S32 numNodes;
    S32 numMeshes;
    S32 numPolygons;
-   S32 numMaterials;
+   size_t numMaterials;
    S32 numLights;
-   S32 numClips;
+   size_t numClips;
 
    SceneStats() : numNodes(0), numMeshes(0), numPolygons(0), numMaterials(0), numLights(0), numClips(0) { }
 };
@@ -1436,7 +1436,7 @@ void AssetImporter::processImageAsset(AssetImportObject* assetItem)
       if (suffix.isNotEmpty())
       {
          assetItem->imageSuffixType = suffixType;
-         S32 suffixPos =assetItem->assetName.find(suffix, 0, String::NoCase|String::Left);
+         String::SizeType suffixPos =assetItem->assetName.find(suffix, 0, String::NoCase|String::Left);
          noSuffixName = assetItem->assetName.substr(0, suffixPos);
       }
 

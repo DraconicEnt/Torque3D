@@ -103,7 +103,7 @@ protected:
                            U32 *outVisDelta, F32 *outOcclusionFade, Point3F *outLightPosSS );
 
    bool _preload( bool server, String &errorStr );
-   void _makePrimBuffer( GFXPrimitiveBufferHandle *pb, U32 count );
+   void _makePrimBuffer( GFXPrimitiveBufferHandle *pb, size_t count );
    void _renderCorona( ObjectRenderInst *ri, SceneRenderState *state, BaseMatInstance *overrideMat );
 
    void onImageChanged() {}
@@ -135,7 +135,7 @@ protected:
 
 protected:
 
-   U32 mElementCount;   
+   size_t mElementCount;   
    GFXPrimitiveBufferHandle mFlarePrimBuffer;   
 };
 

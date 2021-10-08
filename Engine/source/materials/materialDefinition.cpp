@@ -645,7 +645,7 @@ void Material::_mapMaterial()
          // extract filename from base texture
          if (mDiffuseMapName[0] != StringTable->EmptyString())
          {
-            U32 slashPos = String(mDiffuseMapName[0]).find('/', 0, String::Right);
+            String::SizeType slashPos = String(mDiffuseMapName[0]).find('/', 0, String::Right);
             if (slashPos == String::NPos)
                // no '/' character, must be no path, just the filename
                mMapTo = mDiffuseMapName[0];

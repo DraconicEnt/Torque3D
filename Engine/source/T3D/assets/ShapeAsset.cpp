@@ -465,8 +465,8 @@ void ShapeAsset::SplitSequencePathAndName(String& srcPath, String& srcName)
 
    // Determine if there is a sequence name at the end of the source string, and
    // if so, split the filename from the sequence name
-   S32 split = srcPath.find(' ', 0, String::Right);
-   S32 split2 = srcPath.find('\t', 0, String::Right);
+   String::SizeType split = srcPath.find(' ', 0, String::Right);
+   String::SizeType split2 = srcPath.find('\t', 0, String::Right);
    if ((split == String::NPos) || (split2 > split))
       split = split2;
    if (split != String::NPos)

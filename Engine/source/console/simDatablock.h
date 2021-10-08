@@ -194,7 +194,7 @@ public:
 
    void   addSubstitution(StringTableEntry field, S32 idx, const char* subst);
    const char* getSubstitution(StringTableEntry field, S32 idx);
-   S32    getSubstitutionCount() { return substitutions.size(); }
+   size_t    getSubstitutionCount() { return substitutions.size(); }
    void   performSubstitutions(SimDataBlock*, const SimObject*, S32 index=0);
    void   copySubstitutionsFrom(SimDataBlock* other);
    void   printSubstitutions();

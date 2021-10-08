@@ -310,13 +310,13 @@ void BitStream::readBits(S32 bitCount, void *bitPtr)
    bitNum += bitCount;
 }
 
-bool BitStream::_read(U32 size, void *dataPtr)
+bool BitStream::_read(size_t size, void *dataPtr)
 {
    readBits(size << 3, dataPtr);
    return true;
 }
 
-bool BitStream::_write(U32 size, const void *dataPtr)
+bool BitStream::_write(size_t size, const void *dataPtr)
 {
    writeBits(size << 3, dataPtr);
    return true;

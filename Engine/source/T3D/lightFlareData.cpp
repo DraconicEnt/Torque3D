@@ -415,7 +415,7 @@ void LightFlareData::prepRender(SceneRenderState *state, LightFlareState *flareS
    return;
 
    // Figure out the element count to render.
-   U32 elementCount = mElementCount;
+   size_t elementCount = mElementCount;
    const bool isReflectPass = state->isReflectPass();
    if (isReflectPass)
    {
@@ -532,7 +532,7 @@ void LightFlareData::prepRender(SceneRenderState *state, LightFlareState *flareS
    LinearColorF baseColor = LinearColorF::WHITE * lightSourceBrightnessScale * occlusionFade;
 
    // Setup the vertex buffer for the maximum flare elements.
-   const U32 vertCount = 4 * mElementCount;
+   const size_t vertCount = 4 * mElementCount;
    if (  flareState->vertBuffer.isNull() || 
          flareState->vertBuffer->mNumVerts != vertCount )
          flareState->vertBuffer.set( GFX, vertCount, GFXBufferTypeDynamic );
@@ -541,7 +541,7 @@ void LightFlareData::prepRender(SceneRenderState *state, LightFlareState *flareS
 
    const Point2F oneOverTexSize( 1.0f / (F32)mFlareTexture.getWidth(), 1.0f / (F32)mFlareTexture.getHeight() );
 
-   for ( U32 i = 0; i < mElementCount; i++ )
+   for ( size_t i = 0; i < mElementCount; i++ )
    {      
       // Skip non-zero elements for reflections.
       if ( isReflectPass && mElementDist[i] > 0.0f )
@@ -639,7 +639,7 @@ bool LightFlareData::_preload( bool server, String &errorStr )
    return true;
 }
 
-void LightFlareData::_makePrimBuffer( GFXPrimitiveBufferHandle *pb, U32 count )
+void LightFlareData::_makePrimBuffer( GFXPrimitiveBufferHandle *pb, size_t count )
 {
    // create index buffer based on that size
    U32 indexListSize = count * 6; // 6 indices per particle

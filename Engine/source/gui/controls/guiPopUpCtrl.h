@@ -173,7 +173,7 @@ public:
    const char *getScriptValue();
    const char *getTextById(S32 id);
    S32 findText( const char* text );
-   S32 getNumEntries()   { return( mEntries.size() ); }
+   size_t getNumEntries()   { return( mEntries.size() ); }
    void replaceText(S32);
 
    DECLARE_CONOBJECT( GuiPopUpMenuCtrl );

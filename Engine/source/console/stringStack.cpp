@@ -85,7 +85,7 @@ void StringStack::setFloatValue(F64 v)
    mLen = dStrlen(mBuffer + mStart);
 }
 
-char *StringStack::getReturnBuffer(U32 size)
+char *StringStack::getReturnBuffer(size_t size)
 {
    if(size > ReturnBufferSpace)
    {

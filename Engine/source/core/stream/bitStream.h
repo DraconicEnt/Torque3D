@@ -249,8 +249,8 @@ public:
    bool isFull() { return bitNum > (bufSize << 3); }
    bool isValid() { return !error; }
 
-   bool _read (const U32 size,void* d);
-   bool _write(const U32 size,const void* d);
+   bool _read (const size_t size,void* d);
+   bool _write(const size_t size,const void* d);
 
    void readString(char stringBuf[256]);
    void writeString(const char *stringBuf, S32 maxLen=255);

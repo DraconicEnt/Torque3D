@@ -240,7 +240,7 @@ bool FileStream::flush()
 }
 
 //-----------------------------------------------------------------------------
-bool FileStream::_read(const U32 i_numBytes, void *o_pBuffer)
+bool FileStream::_read(const size_t i_numBytes, void *o_pBuffer)
 {
    AssertFatal(0 != mStreamCaps, "FileStream::_read: the stream isn't open");
    AssertFatal(NULL != o_pBuffer || i_numBytes == 0, "FileStream::_read: NULL destination pointer with non-zero read request");
@@ -341,7 +341,7 @@ bool FileStream::_read(const U32 i_numBytes, void *o_pBuffer)
 }
 
 //-----------------------------------------------------------------------------
-bool FileStream::_write(const U32 i_numBytes, const void *i_pBuffer)
+bool FileStream::_write(const size_t i_numBytes, const void *i_pBuffer)
 {
    AssertFatal(0 != mStreamCaps, "FileStream::_write: the stream isn't open");
    AssertFatal(NULL != i_pBuffer || i_numBytes == 0, "FileStream::_write: NULL source buffer pointer on non-zero write request");

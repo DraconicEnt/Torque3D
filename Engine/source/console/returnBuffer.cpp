@@ -61,7 +61,7 @@ void ReturnBuffer::ensureSize(U32 newSize)
    }
 }
 
-char *ReturnBuffer::getBuffer(U32 size, U32 alignment)
+char *ReturnBuffer::getBuffer(size_t size, U32 alignment)
 {
    ensureSize(size);
 

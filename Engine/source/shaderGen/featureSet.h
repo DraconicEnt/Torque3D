@@ -87,7 +87,7 @@ public:
    const String& getDescription() const;
 
    /// Returns the feature count.
-   U32 getCount() const { return mFeatures.size(); }
+   size_t getCount() const { return mFeatures.size(); }
 
    /// Returns the feature at the index and optionally
    /// the feature index when it was added.

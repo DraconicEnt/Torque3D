@@ -24,7 +24,7 @@
 #include "core/bitVector.h"
 
 
-void BitVector::_resize( U32 sizeInBits, bool copyBits )
+void BitVector::_resize( size_t sizeInBits, bool copyBits )
 {
    if ( sizeInBits != 0 ) 
    {

@@ -900,7 +900,7 @@ void GuiInspectorTypeCommand::_setCommand( GuiButtonCtrl *ctrl, StringTableEntry
 
       FrameTemp<char> szBuffer(len);
 
-	   S32 written = dSprintf( szBuffer, len, "%s(\"", mTextEditorCommand );
+	   size_t written = dSprintf( szBuffer, len, "%s(\"", mTextEditorCommand );
       expandEscape(szBuffer.address() + written, command);
       written = strlen(szBuffer);
       dSprintf( szBuffer.address() + written, len - written, "\", \"%d.apply\", %d.getRoot());", getId(), getId() );

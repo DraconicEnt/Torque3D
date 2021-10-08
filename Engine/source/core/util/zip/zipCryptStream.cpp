@@ -187,7 +187,7 @@ U8 ZipCryptRStream::decryptByte()
    return (temp * (temp ^ 1)) >> 8;
 }
 
-bool ZipCryptRStream::_read(const U32 in_numBytes, void* out_pBuffer)
+bool ZipCryptRStream::_read(const size_t in_numBytes, void* out_pBuffer)
 {
    U32 numRead = fillBuffer(in_numBytes, out_pBuffer);
    if(numRead > 0)

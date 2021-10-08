@@ -42,7 +42,7 @@ public:
    U8* getlockedPtr() const { return mFrameAllocatorPtr; }
 
 protected:
-   U32 mFrameAllocatorMark;
+   size_t mFrameAllocatorMark;
    U8 *mFrameAllocatorPtr;
 
 #if TORQUE_DEBUG

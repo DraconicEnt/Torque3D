@@ -69,7 +69,7 @@ bool VectorResize(U32 *aSize, U32 *aCount, void **arrayPtr, U32 newCount, U32 el
 
 #else
 
-bool VectorResize(U32 *aSize, U32 *aCount, void **arrayPtr, U32 newCount, U32 elemSize)
+bool VectorResize(size_t *aSize, size_t *aCount, void **arrayPtr, size_t newCount, size_t elemSize)
 {
    PROFILE_SCOPE( VectorResize );
 

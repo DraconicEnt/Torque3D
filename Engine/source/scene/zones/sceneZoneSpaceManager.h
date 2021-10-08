@@ -287,7 +287,7 @@ class SceneZoneSpaceManager
       U32 getNumActiveZones() const { return mNumActiveZones; }
 
       /// Return the total number of objects in the scene that manage zones.
-      U32 getNumZoneSpaces() const { return mZoneSpaces.size(); }
+      size_t getNumZoneSpaces() const { return mZoneSpaces.size(); }
 
       /// Find the zone that contains the given point.
       ///

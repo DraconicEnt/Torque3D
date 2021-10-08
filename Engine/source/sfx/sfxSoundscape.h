@@ -178,7 +178,7 @@ class SFXSoundscapeManager
       
       /// Return the total number of soundscape instances currently on the stack.
       /// Always >=1.
-      U32 getNumTotalSoundscapes() const { return mStack.size(); }
+      size_t getNumTotalSoundscapes() const { return mStack.size(); }
    
       /// Insert a new soundscape instance associated with the given ambient space
       /// at the given stack index.

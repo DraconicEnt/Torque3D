@@ -721,7 +721,7 @@ DefineEngineMethod(NavPath, onNavMeshUpdateBox, void, (const char *data),,
    "@brief Callback when a particular area in this path's NavMesh is rebuilt.")
 {
    String s(data);
-   U32 space = s.find(' ');
+   String::SizeType space = s.find(' ');
    if(space != String::NPos)
    {
       String id = s.substr(0, space);

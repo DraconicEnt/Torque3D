@@ -94,7 +94,7 @@ public:
    void setComponentGroupTargetId(S32 compId) { mComponentGroupTargetId = compId; }
    
    /// Return the number of objects being inspected by this GuiInspector.
-   U32 getNumInspectObjects() const { return mTargets.size(); }
+   size_t getNumInspectObjects() const { return mTargets.size(); }
    
    /// Call inspectPreApply on all inspected objects.
    void sendInspectPreApply();

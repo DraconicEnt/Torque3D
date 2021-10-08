@@ -94,7 +94,7 @@ public:
    
    virtual void onDeleteNotify( SimObject* object );
    
-   U32 getNumChildren() const { return mChildren.size(); }
+   size_t getNumChildren() const { return mChildren.size(); }
 };
 
 ///
@@ -181,7 +181,7 @@ public:
    void popCompound( bool discard = false );
    
    /// Return the current nesting depth of the compound stack.
-   U32 getCompoundStackDepth() const { return mCompoundStack.size(); }
+   size_t getCompoundStackDepth() const { return mCompoundStack.size(); }
       
    /// @}
 };

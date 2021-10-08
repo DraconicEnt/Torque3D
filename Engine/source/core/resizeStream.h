@@ -54,7 +54,7 @@ class ResizeFilterStream : public FilterStream, public IStreamByteCount
 
    // Mandatory overrides.
   protected:
-   bool _read(const U32 in_numBytes,  void* out_pBuffer);
+   bool _read(const size_t in_numBytes,  void* out_pBuffer);
   public:
    U32  getPosition() const;
    bool setPosition(const U32 in_newPosition);

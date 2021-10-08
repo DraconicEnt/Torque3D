@@ -94,8 +94,8 @@ public:
 
    // Derived classes must override these...
 protected:
-   virtual bool _read(const U32 in_numBytes,  void* out_pBuffer)      = 0;
-   virtual bool _write(const U32 in_numBytes, const void* in_pBuffer) = 0;
+   virtual bool _read(const size_t in_numBytes,  void* out_pBuffer)      = 0;
+   virtual bool _write(const size_t in_numBytes, const void* in_pBuffer) = 0;
 
    virtual void _write(const String & str);
    virtual void _read(String * str);
@@ -183,10 +183,10 @@ public:
 
    // Overloaded write and read ops..
   public:
-   bool read(const U32 in_numBytes,  void* out_pBuffer) {
+   bool read(const size_t in_numBytes,  void* out_pBuffer) {
       return _read(in_numBytes, out_pBuffer);
    }
-   bool write(const U32 in_numBytes, const void* in_pBuffer) {
+   bool write(const size_t in_numBytes, const void* in_pBuffer) {
       return _write(in_numBytes, in_pBuffer);
    }
 

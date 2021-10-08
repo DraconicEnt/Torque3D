@@ -280,8 +280,8 @@ int dItoa(int n, char s[]);
 
 extern void   dPrintf(const char *format, ...);
 extern S32    dVprintf(const char *format, va_list arglist);
-extern S32    dSprintf(char *buffer, U32 bufferSize, const char *format, ...);
-extern S32    dVsprintf(char *buffer, U32 bufferSize, const char *format, va_list arglist);
+extern S32    dSprintf(char *buffer, size_t bufferSize, const char *format, ...);
+extern S32    dVsprintf(char *buffer, size_t bufferSize, const char *format, va_list arglist);
 extern S32    dSscanf(const char *buffer, const char *format, ...);
 
 #endif

@@ -194,7 +194,7 @@ void GroundCoverCell::_rebuildVB()
    // So... how many billboards do we need in
    // each batch? We're trying to evenly divide
    // the amount across all the VBs.
-   const U32 batchBB = mBillboards.size() / batches;
+   const size_t batchBB = mBillboards.size() / batches;
 
    // Init the vertex buffer list to the right size.  Any
    // VBs already in there will remain unless we're truncating
@@ -205,7 +205,7 @@ void GroundCoverCell::_rebuildVB()
    Vector<Placement>::const_iterator iter = mBillboards.begin();
 
    // Prepare each batch.
-   U32 bb, remaining = mBillboards.size();
+   size_t bb, remaining = mBillboards.size();
    for ( U32 b = 0; b < batches; b++ )
    {
       // Grab a reference to the vb.
@@ -371,9 +371,9 @@ void GroundCoverCell::renderBillboards( SceneRenderState *state, BaseMatInstance
    RenderPassManager *pass = state->getRenderPass();
       
    // Draw each batch.
-   U32 remaining = mBillboards.size();
-   const U32 batches = mVBs.size();
-   const U32 batchBB = remaining / batches;
+   size_t remaining = mBillboards.size();
+   const size_t batches = mVBs.size();
+   const size_t batchBB = remaining / batches;
 
    for ( U32 b = 0; b < batches; b++ )
    {

@@ -104,10 +104,10 @@ void ConvexShapeCollisionConvex::getFeatures( const MatrixF &mat, const VectorF 
 
 	// Points...
 
-	S32 firstVert = cf->mVertexList.size();
+	size_t firstVert = cf->mVertexList.size();
 	
 	const Vector< Point3F > &pointList = pShape->mGeometry.points;
-	const U32 pointListCount = pointList.size();
+	const size_t pointListCount = pointList.size();
 
 	cf->mVertexList.increment( pointListCount );
 
@@ -124,8 +124,8 @@ void ConvexShapeCollisionConvex::getFeatures( const MatrixF &mat, const VectorF 
 		// Add this Face's Edges.
 
 		const Vector< ConvexShape::Edge > &edgeList = faceList[i].edges;		
-		const U32 edgeCount = edgeList.size();
-		const S32 firstEdge = cf->mEdgeList.size();
+		const size_t edgeCount = edgeList.size();
+		const size_t firstEdge = cf->mEdgeList.size();
 
 		cf->mEdgeList.increment( edgeCount );
 
@@ -141,7 +141,7 @@ void ConvexShapeCollisionConvex::getFeatures( const MatrixF &mat, const VectorF 
 		// necessarily a single triangle.
 				
 		const Vector< ConvexShape::Triangle > &triangleList = faceList[i].triangles;
-		const U32 triangleCount = triangleList.size();
+		const size_t triangleCount = triangleList.size();
 		S32 firstTriangle = cf->mFaceList.size();
 
 		cf->mFaceList.increment( triangleCount );
@@ -448,7 +448,7 @@ void ConvexShape::writeFields( Stream &stream, U32 tabStop )
 
    stream.write(2, "\r\n");   
 
-   S32 count = mSurfaces.size();
+   size_t count = mSurfaces.size();
    if ( count > smMaxSurfaces )
    {
        Con::errorf( "ConvexShape has too many surfaces to save! Truncated value %d to maximum value of %d", count, smMaxSurfaces );
@@ -549,7 +549,7 @@ U32 ConvexShape::packUpdate( NetConnection *conn, U32 mask, BitStream *stream )
          stream->writeInt(mSurfaceUVs[i].matID, 16);
       }
 
-	  const U32 surfaceTex = mSurfaceTextures.size();
+	  const size_t surfaceTex = mSurfaceTextures.size();
 
 	  stream->writeInt( surfaceTex, 32 );
 	  //next check for any texture coord or scale mods
@@ -821,7 +821,7 @@ bool ConvexShape::buildPolyList( PolyListContext context, AbstractPolyList *plis
       {
          const ConvexShape::Face &face = faceList[i];
 
-         S32 s = face.triangles.size();
+         size_t s = face.triangles.size();
          for(S32 j = 0; j < s; j++)
          {
             plist->begin(0, s*i + j);
@@ -951,7 +951,7 @@ bool ConvexShape::castRay( const Point3F &start, const Point3F &end, RayInfo *in
       return false;   
 
    const Vector< PlaneF > &planeList = mPlanes;
-   const U32 planeCount = planeList.size();  
+   const size_t planeCount = planeList.size();  
 
    F32 t;
    F32 tmin = F32_MAX;
@@ -1016,7 +1016,7 @@ void ConvexShape::updateBounds( bool recenter )
       return;
 
    Vector<Point3F> &pointListOS = mGeometry.points;
-   U32 pointCount = pointListOS.size();
+   size_t pointCount = pointListOS.size();
 
    Point3F volumnCenter( 0,0,0 );
    F32 areaSum = 0.0f;
@@ -1105,10 +1105,10 @@ void ConvexShape::cullEmptyPlanes( Vector< U32 > *removedPlanes )
    //   return;
 
    removedPlanes->clear();
-   const U32 startPlaneCount = mPlanes.size();
+   const size_t startPlaneCount = mPlanes.size();
 
    const Vector< ConvexShape::Face > &faceList = mGeometry.faces;
-   const U32 faceCount = faceList.size();
+   const size_t faceCount = faceList.size();
 
    S32 *used = new S32[ startPlaneCount ];
 
@@ -1277,12 +1277,12 @@ void ConvexShape::_updateGeometry( bool updateCollision )
    //msurfaces as the counter, because we need to match it.
    if (mSurfaceUVs.size() > mSurfaces.size())
    {
-      for (U32 x = mSurfaceUVs.size(); x > mSurfaces.size(); x--)
+      for (size_t x = mSurfaceUVs.size(); x > mSurfaces.size(); x--)
          mSurfaceUVs.pop_front();
    }
    else if (mSurfaceUVs.size() < mSurfaces.size())
    {
-      for (U32 x = mSurfaceUVs.size(); x <= mSurfaces.size(); x++)
+      for (size_t x = mSurfaceUVs.size(); x <= mSurfaces.size(); x++)
       {
          mSurfaceUVs.increment();
          mSurfaceUVs[x].offset = Point2F(0, 0);
@@ -1362,7 +1362,7 @@ void ConvexShape::_updateGeometry( bool updateCollision )
 
 	for ( S32 i = 0; i < faceList.size(); i++ )	
 	{
-      U32 count = faceList[i].triangles.size();
+      size_t count = faceList[i].triangles.size();
 
       mSurfaceBuffers[mSurfaceUVs[i].matID].mPrimCount += count;
       mSurfaceBuffers[mSurfaceUVs[i].matID].mVertCount += count * 3;

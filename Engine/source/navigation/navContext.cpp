@@ -32,7 +32,7 @@ void NavContext::log(const rcLogCategory category, const String &msg)
    doLog(category, msg.c_str(), msg.length());
 }
 
-void NavContext::doLog(const rcLogCategory category, const char* msg, const int len)
+void NavContext::doLog(const rcLogCategory category, const char* msg, const size_t len)
 {
    if(category == RC_LOG_ERROR)
       Con::errorf(msg);

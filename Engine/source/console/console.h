@@ -968,14 +968,14 @@ namespace Con
    /// @{
 
    ///
-   char* getReturnBuffer(U32 bufferSize);
+   char* getReturnBuffer(size_t bufferSize);
    char* getReturnBuffer(const char *stringToCopy);
    char* getReturnBuffer(const String& str);
    char* getReturnBuffer(const StringBuilder& str);
 
    char* getArgBuffer(U32 bufferSize);
    char* getFloatArg(F64 arg);
-   char* getIntArg(S32 arg);
+   char* getIntArg(size_t arg);
    char* getBoolArg(bool arg);
    char* getStringArg(const char* arg);
    char* getStringArg(const String& arg);

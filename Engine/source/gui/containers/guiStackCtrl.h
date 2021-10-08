@@ -87,7 +87,7 @@ public:
    virtual void stackVertical(bool fromTop);
    virtual void stackHorizontal(bool fromLeft);
 
-   S32 getCount() { return size(); }; /// Returns the number of children in the stack
+   size_t getCount() { return size(); }; /// Returns the number of children in the stack
 
    void addObject(SimObject *obj);
    void removeObject(SimObject *obj);

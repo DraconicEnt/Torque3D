@@ -97,7 +97,7 @@ public:
 
    // management
    U32  getSize() const;               ///< Return the number of elements
-   void resize(U32);                   ///< Set the list size
+   void resize(size_t);                   ///< Set the list size
    void clear();                       ///< Empty the List
    bool isEmpty() const;               ///< Node count == 0?
 
@@ -208,7 +208,7 @@ template<class Type> inline U32 List<Type>::getSize() const
    return _size;
 }
 
-template<class Type> void List<Type>::resize(U32 size)
+template<class Type> void List<Type>::resize(size_t size)
 {
    if (size > _size)
    {

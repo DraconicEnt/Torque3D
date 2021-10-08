@@ -77,7 +77,7 @@ struct TSDrawPrimitive
    };
 
    S32 start;
-   S32 numElements;
+   size_t numElements;
    S32 matIndex;    ///< holds material index & element type (see above enum)
 };
 

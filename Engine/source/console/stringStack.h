@@ -92,7 +92,7 @@ struct StringStack
    void setFloatValue(F64 v);
 
    /// Return a temporary buffer we can use to return data.
-   char* getReturnBuffer(U32 size);
+   char* getReturnBuffer(size_t size);
 
    /// Return a buffer we can use for arguments.
    ///

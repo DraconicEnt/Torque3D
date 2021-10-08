@@ -34,12 +34,12 @@
 // hierarchy
 struct SceneStats
 {
-   S32 numNodes;
-   S32 numMeshes;
-   S32 numPolygons;
-   S32 numMaterials;
-   S32 numLights;
-   S32 numClips;
+   size_t numNodes;
+   size_t numMeshes;
+   size_t numPolygons;
+   size_t numMaterials;
+   size_t numLights;
+   size_t numClips;
 
    SceneStats() : numNodes(0), numMeshes(0), numPolygons(0), numMaterials(0), numLights(0), numClips(0) { }
 };

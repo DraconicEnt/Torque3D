@@ -59,7 +59,7 @@ public:
    bool setPosition(const U32 in_newPosition);
 
 protected:
-   bool _read(const U32 in_numBytes,  void* out_pBuffer);
+   bool _read(const size_t in_numBytes,  void* out_pBuffer);
 
    void updateKeys(const U8 c);
    U8 decryptByte();

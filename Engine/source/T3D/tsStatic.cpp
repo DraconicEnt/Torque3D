@@ -654,7 +654,7 @@ void TSStatic::reSkin()
             // Check if the skin handle contains an explicit "old" base string. This
             // allows all models to support skinning, even if they don't follow the 
             // "base_xxx" material naming convention.
-            S32 split = newSkin.find('=');    // "old=new" format skin?
+            String::SizeType split = newSkin.find('=');    // "old=new" format skin?
             if (split != String::NPos)
             {
                oldSkin = newSkin.substr(0, split);

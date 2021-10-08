@@ -143,20 +143,20 @@ struct PolyhedronVectorData : public PolyhedronData
       /// @{
 
       /// Return the number of planes that make up this polyhedron.
-      U32 getNumPlanes() const { return mPlaneList.size(); }
+      size_t getNumPlanes() const { return mPlaneList.size(); }
 
       /// Return the planes that make up the polyhedron.
       /// @note The normals of these planes are facing *inwards*.
       PlaneF* getPlanes() const { return mPlaneList.address(); }
 
       /// Return the number of points that this polyhedron has.
-      U32 getNumPoints() const { return mPointList.size(); }
+      size_t getNumPoints() const { return mPointList.size(); }
 
       /// 
       Point3F* getPoints() const { return mPointList.address(); }
 
       /// Return the number of edges that this polyhedron has.
-      U32 getNumEdges() const { return mEdgeList.size(); }
+      size_t getNumEdges() const { return mEdgeList.size(); }
 
       ///
       Edge* getEdges() const { return mEdgeList.address(); }
@@ -204,7 +204,7 @@ struct PolyhedronUnmanagedVectorData : public PolyhedronData
       /// @{
 
       /// Return the number of planes that make up this polyhedron.
-      U32 getNumPlanes() const { return mPlaneList.size(); }
+      size_t getNumPlanes() const { return mPlaneList.size(); }
 
       /// Return the planes that make up the polyhedron.
       /// @note The normals of these planes are facing *inwards*.
@@ -212,14 +212,14 @@ struct PolyhedronUnmanagedVectorData : public PolyhedronData
       PlaneF* getPlanes() { return mPlaneList.address(); }
 
       /// Return the number of points that this polyhedron has.
-      U32 getNumPoints() const { return mPointList.size(); }
+      size_t getNumPoints() const { return mPointList.size(); }
 
       /// 
       const Point3F* getPoints() const { return mPointList.address(); }
       Point3F* getPoints() { return mPointList.address(); }
 
       /// Return the number of edges that this polyhedron has.
-      U32 getNumEdges() const { return mEdgeList.size(); }
+      size_t getNumEdges() const { return mEdgeList.size(); }
 
       ///
       const Edge* getEdges() const { return mEdgeList.address(); }

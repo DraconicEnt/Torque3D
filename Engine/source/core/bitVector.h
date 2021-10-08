@@ -43,7 +43,7 @@ class BitVector
       static U32 calcByteSize( const U32 numBits );
 
       /// Internal function which resizes the bit array.
-      void _resize( U32 sizeInBits, bool copyBits );
+      void _resize( size_t sizeInBits, bool copyBits );
 
       bool _test( const BitVector& vector, bool all ) const;
 
@@ -72,7 +72,7 @@ class BitVector
       /// Resizes the bit vector.
       /// @note The new bits in the vector are not cleared and 
       /// contain random garbage bits.
-      void setSize( U32 sizeInBits );
+      void setSize( size_t sizeInBits );
 
       /// Returns the size in bits.
       U32 getSize() const { return mSize; }
@@ -178,7 +178,7 @@ inline U32 BitVector::calcByteSize( U32 numBits )
    return (((numBits + 0x7) >> 3) + 0x3) & ~0x3;
 }
 
-inline void BitVector::setSize( const U32 sizeInBits )
+inline void BitVector::setSize( const size_t sizeInBits )
 {
    _resize( sizeInBits, true );
 }

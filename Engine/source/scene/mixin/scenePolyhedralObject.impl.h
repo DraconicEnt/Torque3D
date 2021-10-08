@@ -167,7 +167,7 @@ U32 ScenePolyhedralObject< Base, P >::packUpdate( NetConnection* connection, U32
    {
       // Write planes.
 
-      const U32 numPlanes = mPolyhedron.getNumPlanes();
+      const size_t numPlanes = mPolyhedron.getNumPlanes();
       const typename PolyhedronType::PlaneType* planes = mPolyhedron.getPlanes();
 
       stream->writeInt( numPlanes, 8 );
@@ -176,7 +176,7 @@ U32 ScenePolyhedralObject< Base, P >::packUpdate( NetConnection* connection, U32
 
       // Write points.
 
-      const U32 numPoints = mPolyhedron.getNumPoints();
+      const size_t numPoints = mPolyhedron.getNumPoints();
       const typename PolyhedronType::PointType* points = mPolyhedron.getPoints();
 
       stream->writeInt( numPoints, 8 );
@@ -185,7 +185,7 @@ U32 ScenePolyhedralObject< Base, P >::packUpdate( NetConnection* connection, U32
 
       // Write edges.
 
-      const U32 numEdges = mPolyhedron.getNumEdges();
+      const size_t numEdges = mPolyhedron.getNumEdges();
       const typename PolyhedronType::EdgeType* edges = mPolyhedron.getEdges();
 
       stream->writeInt( numEdges, 8 );
@@ -277,8 +277,8 @@ void ScenePolyhedralObject< Base, P >::writeFields( Stream& stream, U32 tabStop 
 
    // Write all planes.
    
-   const U32 numPlanes = mPolyhedron.getNumPlanes();
-   for( U32 i = 0; i < numPlanes; ++ i )
+   const size_t numPlanes = mPolyhedron.getNumPlanes();
+   for(size_t i = 0; i < numPlanes; ++ i )
    {
       const PlaneF& plane = mPolyhedron.getPlanes()[ i ];
 

@@ -131,7 +131,7 @@ bool MemStream::setPosition(const U32 in_newPosition)
    return true;
 }
 
-bool MemStream::_read(const U32 in_numBytes, void *out_pBuffer)
+bool MemStream::_read(const size_t in_numBytes, void *out_pBuffer)
 {
    AssertFatal(getStatus() != Closed, "Attempted read from a closed stream");
 
@@ -168,7 +168,7 @@ bool MemStream::_read(const U32 in_numBytes, void *out_pBuffer)
    return success;
 }
 
-bool MemStream::_write(const U32 in_numBytes, const void *in_pBuffer)
+bool MemStream::_write(const size_t in_numBytes, const void *in_pBuffer)
 {
    AssertFatal(getStatus() != Closed, "Attempted write to a closed stream");
 

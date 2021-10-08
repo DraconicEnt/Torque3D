@@ -42,7 +42,7 @@ protected:
    /// @param[in] category The category of the message.
    /// @param[in] msg      The formatted message.
    /// @param[in] len      The length of the formatted message.
-   virtual void doLog(const rcLogCategory category, const char* msg, const int len);
+   virtual void doLog(const rcLogCategory category, const char* msg, const size_t len);
 
    /// Clears all timers. (Resets all to unused.)
    virtual void doResetTimers();
