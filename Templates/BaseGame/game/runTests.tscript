@@ -1,5 +1,15 @@
 setLogMode(2);
 $Con::LogBufferEnabled = false;
 $Testing::CheckMemoryLeaks = false;
+
+// Create a GUI canvas but with the NULL adapter for CI compat
+$Video::forceDisplayAdapter = -1;
+createCanvas("T3D Testing");
+
+// We load the core module because some of the tests require default profiles to be initialized
+ModuleDatabase.setModuleExtension("module");
+ModuleDatabase.scanModules( "core", false );
+ModuleDatabase.LoadExplicit( "CoreModule" );
+
 runAllUnitTests("-*.Stress*");
 quit();
