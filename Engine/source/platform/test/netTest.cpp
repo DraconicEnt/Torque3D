@@ -166,7 +166,7 @@ TEST(Net, JournalTCPRequest)
    handler.makeRequest();
    S32 bytesRead = handler.mDataReceived;
    Journal::Stop();
-
+      
    Journal::Play("journalTCP.jrn");
    handler.makeRequest();
    Journal::Stop();
