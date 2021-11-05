@@ -76,6 +76,7 @@
  extern int x86UNIXClose(int fd);
  extern ssize_t x86UNIXRead(int fd, void *buf, size_t nbytes);
  extern ssize_t x86UNIXWrite(int fd, const void *buf, size_t nbytes);
+ extern bool ResolvePathCaseInsensitive(char* pathName, S32 pathNameSize, bool requiredAbsolute);
 
  const int MaxPath = PATH_MAX;
 
@@ -179,76 +180,6 @@ bool dPathCopy(const char *fromName, const char *toName, bool nooverwrite)
     return sgPrefDir;
  }
 
- //------------------------------------------------------------------------------
- // munge the case of the specified pathName.  This means try to find the actual
- // filename in with case-insensitive matching on the specified pathName, and
- // store the actual found name.
- void ResolvePathCaseInsensitive(char* pathName, S32 pathNameSize)
- {
-    char tempBuf[MaxPath];
-    dStrncpy(tempBuf, pathName, pathNameSize);
-
-    AssertFatal(pathName[0] == '/', "PATH must be absolute");
-
-    struct stat filestat;
-    const int MaxPathEl = 200;
-    char *currChar = pathName;
-    char testPath[MaxPath];
-    char pathEl[MaxPathEl];
-    bool done = false;
-
-    dStrncpy(tempBuf, "/", MaxPath);
-    currChar++;
-
-    while (!done)
-    {
-       char* termChar = dStrchr(currChar, '/');
-       if (termChar == NULL)
-          termChar = dStrchr(currChar, '\0');
-       AssertFatal(termChar, "Can't find / or NULL terminator");
-
-       S32 pathElLen = (termChar - currChar);
-       dStrncpy(pathEl, currChar, pathElLen);
-       pathEl[pathElLen] = '\0';
-       dStrncpy(testPath, tempBuf, MaxPath);
-       dStrcat(testPath, pathEl, MaxPath);
-       if (stat(testPath, &filestat) != -1)
-       {
-          dStrncpy(tempBuf, testPath, MaxPath);
-       }
-       else
-       {
-          DIR *dir = opendir(tempBuf);
-          struct dirent* ent;
-          bool foundMatch = false;
-          while (dir != NULL && (ent = readdir(dir)) != NULL)
-          {
-             if (dStricmp(pathEl, ent->d_name) == 0)
-             {
-                foundMatch = true;
-                dStrcat(tempBuf, ent->d_name, MaxPath);
-                break;
-             }
-          }
-
-          if (!foundMatch)
-             dStrncpy(tempBuf, testPath, MaxPath);
-          if (dir)
-             closedir(dir);
-       }
-       if (*termChar == '/')
-       {
-          dStrcat(tempBuf, "/", MaxPath);
-          termChar++;
-          currChar = termChar;
-       }
-       else
-          done = true;
-    }
-
-    dStrncpy(pathName, tempBuf, pathNameSize);
- }
-
  //-----------------------------------------------------------------------------
  // Returns true if the pathname exists, false otherwise.  If isFile is true,
  // the pathname is assumed to be a file path, and only the directory part
@@ -296,7 +227,7 @@ bool dPathCopy(const char *fromName, const char *toName, bool nooverwrite)
        return;
 
     // otherwise munge the case of the path
-     ResolvePathCaseInsensitive(dest, destSize);
+     ResolvePathCaseInsensitive(dest, destSize, true);
  }
 
  //-----------------------------------------------------------------------------
@@ -1291,7 +1222,7 @@ bool dPathCopy(const char *fromName, const char *toName, bool nooverwrite)
    // Load path into temporary buffer
    dMemcpy(caseSensitivePath, path, pathLength);
    caseSensitivePath[pathLength] = 0x00;
-   ResolvePathCaseInsensitive(caseSensitivePath, pathLength);
+   ResolvePathCaseInsensitive(caseSensitivePath, pathLength, false);
 #else
    const char* caseSensitivePath = path;
 #endif

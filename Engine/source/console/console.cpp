@@ -485,6 +485,13 @@ U32 tabComplete(char* inputBuffer, U32 cursorPos, U32 maxResultLength, bool forw
       }
       completionBaseStart = p;
       completionBaseLen = cursorPos - p;
+
+      // Bail if we end up at start of string
+      if (p == 0)
+      {
+          return cursorPos;
+      }
+
       // Is this function being invoked on an object?
       if (inputBuffer[p - 1] == '.') 
       {
@@ -859,12 +866,6 @@ void setVariable(const char *name, const char *value)
       name = prependDollar(name);
       gEvalState.globalVars.setVariable(StringTable->insert(name), value);
    }
-}
-
-void setLocalVariable(const char *name, const char *value)
-{
-   name = prependPercent(name);
-   gEvalState.getCurrentFrame().setVariable(StringTable->insert(name), value);
 }
 
 void setBoolVariable(const char *varName, bool value)
