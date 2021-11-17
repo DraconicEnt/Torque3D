@@ -31,8 +31,12 @@ void GuiSpinningCompassCtrl::onRender(Point2I offset, const RectI &updateRect)
     if (connection)
     {
         GameBase* controlObject = connection->getControlObject();
-        const MatrixF& transform = controlObject->getWorldTransform();
-        mAngle = mRadToDeg(transform.toEuler().z);
+
+        if (controlObject)
+        {
+            const MatrixF &transform = controlObject->getWorldTransform();
+            mAngle = mRadToDeg(transform.toEuler().z);
+        }
     }
 
     Parent::onRender(offset, updateRect);
