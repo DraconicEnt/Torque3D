@@ -162,7 +162,8 @@ IMPLEMENT_CALLBACK( GuiControl, onControlDropped, void, ( GuiControl* control, c
    "This is only called for topmost visible controls as the GuiDragAndDropControl drops its payload on them.\n\n"
    "@param control The control that is being dropped onto this control.\n"
    "@param dropPoint The point at which the control is being dropped.  Relative to the canvas." );
-
+IMPLEMENT_CALLBACK( GuiControl, onRender, void, ( ), ( ),
+    "Called when the control is drawn. Used for an entry point for script handling of eg. reticles." );
 
 GuiControl *GuiControl::smPrevResponder = NULL;
 GuiControl *GuiControl::smCurResponder = NULL;
@@ -453,6 +454,9 @@ void GuiControl::onRender(Point2I offset, const RectI &updateRect)
 
    // Render Children
    renderChildControls(offset, updateRect);
+
+   // Dispatch callback
+   onRender_callback();
 }
 
 //-----------------------------------------------------------------------------

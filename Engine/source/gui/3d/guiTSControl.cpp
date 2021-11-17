@@ -725,6 +725,9 @@ void GuiTSCtrl::onRender(Point2I offset, const RectI &updateRect)
       renderChildControls(offset, updateRect);
    }
    smFrameCount++;
+
+   // Dispatch on render
+   onRender_callback();
 }
 
 //-----------------------------------------------------------------------------
