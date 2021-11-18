@@ -22,42 +22,16 @@
 #include "gfx/primBuilder.h"
 #include "gfx/gfxDrawUtil.h"
 #include "terrain/terrData.h"
+#include "gfx/gfxTransformSaver.h"
 
-//-----------------------------------------------------------------------------
-
-class GuiCommanderHud : public GuiTSCtrl
-{
-private:
-    typedef GuiTSCtrl Parent;
-
-
-    Point2F mPanSpeed;
-    F32     mZoomSpeed;
-    S32     mLastRenderTime;
-
-public:
-    Point2F mPanGoal, mCurPan;
-    F32     mZoomGoal, mCurZoom;
-
-    GuiCommanderHud();
-
-    bool processCameraQuery(CameraQuery *query);
-    void renderWorld(const RectI &updateRect);
-
-    void onRender( Point2I, const RectI &);
-    static void initPersistFields();
-
-DECLARE_CONOBJECT( GuiCommanderHud );
-};
-
-
-//-----------------------------------------------------------------------------
+#include "gui/3d/guiCommanderHud.h"
 
 IMPLEMENT_CONOBJECT( GuiCommanderHud );
 
 GuiCommanderHud::GuiCommanderHud()
         :   mPanSpeed(10, 10), mZoomSpeed(1), mCurPan(0,0), mCurZoom(M_PI_F/2),
-            mPanGoal(0,0), mZoomGoal(M_PI_F/2), mLastRenderTime(0)
+            mPanGoal(0,0), mZoomGoal(M_PI_F/2), mLastRenderTime(0), mBackgroundColor(ColorI::BLACK),
+            mDragging(false), mPanning(false), mDragStart(Point2I::Zero), mDragCurrent(Point2I::Zero)
 {
 }
 
@@ -65,6 +39,7 @@ void GuiCommanderHud::initPersistFields()
 {
     Parent::initPersistFields();
 
+    addField("backgroundColor", TypeColorI, Offset(mBackgroundColor, GuiCommanderHud), "Sets the background draw color of the map - used to fill in otherwise transparent pixels.");
     addField("panSpeed",  TypePoint2F, Offset(mPanSpeed,  GuiCommanderHud), "Set the speed (x/y) we pan to our goal.");
     addField("zoomSpeed", TypeF32,     Offset(mZoomSpeed, GuiCommanderHud), "Set the speed we zoom with to our goal.");
 }
@@ -73,8 +48,8 @@ bool GuiCommanderHud::processCameraQuery(CameraQuery *q)
 {
     // Scale ranges based on the highest/lowest point in the terrain
     F32 maxHi,minHi;
-    minHi = INFINITY;
-    maxHi = -INFINITY;
+    minHi = 256;
+    maxHi = -256;
 
     // Enumerate all terrains and look for the min/max heights
     F32 currentMinimumHeight;
@@ -129,8 +104,58 @@ void GuiCommanderHud::renderWorld(const RectI &updateRect)
     PROFILE_END();
 }
 
+void GuiCommanderHud::onMouseUp(const GuiEvent &event)
+{
+    Parent::onMouseUp(event);
+
+    mDragging = false;
+}
+
+void GuiCommanderHud::onMouseDown(const GuiEvent &event)
+{
+    Parent::onMouseDown(event);
+
+    mDragging = true;
+    mDragStart = event.mousePoint;
+    mDragCurrent = event.mousePoint;
+}
+
+void GuiCommanderHud::onRightMouseDown(const GuiEvent& event)
+{
+    Parent::onRightMouseDown(event);
+
+    mPanning = true;
+    mCursorLastPosition = event.mousePoint;
+}
+
+void GuiCommanderHud::onRightMouseUp(const GuiEvent& event)
+{
+    Parent::onRightMouseUp(event);
+
+    mPanning = false;
+}
+
+void GuiCommanderHud::onRightMouseDragged(const GuiEvent& event)
+{
+    const Point2I mouseDelta = event.mousePoint - mCursorLastPosition;
+    const Point2F mouseDeltaFloat(mouseDelta.x, mouseDelta.y);
+
+    mPanGoal += mouseDeltaFloat;
+    mCurPan += mouseDeltaFloat;
+    mCursorLastPosition = event.mousePoint;
+}
+
+void GuiCommanderHud::onMouseDragged(const GuiEvent &event)
+{
+    Parent::onMouseMove(event);
+
+    mDragCurrent = event.mousePoint;
+}
+
 void GuiCommanderHud::onRender(Point2I offset, const RectI &updateRect)
 {
+    GFXTransformSaver saver;
+
     if(!processCameraQuery(&mLastCameraQuery))
     {
         // We have no camera, but render the GUI children
@@ -139,6 +164,10 @@ void GuiCommanderHud::onRender(Point2I offset, const RectI &updateRect)
         renderChildControls( offset, updateRect );
         return;
     }
+
+    // Draw background first
+    RectI rect(offset.x, offset.y, getExtent().x, getExtent().y);
+    GFX->getDrawUtil()->drawRectFill(rect, mBackgroundColor);
 
     // set up the camera and viewport stuff:
     F32 wwidth;
@@ -173,6 +202,9 @@ void GuiCommanderHud::onRender(Point2I offset, const RectI &updateRect)
     tempRect.point.y = screensize.y - (tempRect.point.y + tempRect.extent.y);
 #endif
 
+    const RectI originalViewPort = GFX->getViewport();
+    const Frustum originalFrustum = GFX->getFrustum();
+
     GFX->setViewport( tempRect );
 
     // Clear the zBuffer so GUI doesn't hose object rendering accidentally
@@ -206,6 +238,7 @@ void GuiCommanderHud::onRender(Point2I offset, const RectI &updateRect)
     // depend on that value.
     MatrixF worldToCamera = mLastCameraQuery.cameraMatrix;
     worldToCamera.inverse();
+
     GFX->setWorldMatrix( worldToCamera );
 
     mSaveProjection = GFX->getProjectionMatrix();
@@ -233,9 +266,19 @@ void GuiCommanderHud::onRender(Point2I offset, const RectI &updateRect)
     // Render the world...
     Parent::onRender(offset, updateRect);
 
+    // Restore state for drawing on top of result
+    saver.restore();
+
     // If you wanted to render custom GUI elements, like a sensor map, icons for
     // players/vehicles/objectives, you would do it here by calling project()
     // for all their positions and drawing bitmaps at the appropriate locations.
+
+    if (mDragging)
+    {
+        Point2I rectDimensions = mDragCurrent - mDragStart;
+        const RectI dragRectangle(mDragStart.x, mDragStart.y, rectDimensions.x, rectDimensions.y);
+        GFX->getDrawUtil()->drawRect(dragRectangle, ColorI::GREEN);
+    }
 }
 
 DefineEngineMethod(GuiCommanderHud, pan, void, (F32 x, F32 y), , "(x, y) Cut to a location.")
