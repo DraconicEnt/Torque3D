@@ -90,6 +90,11 @@ public:
    /// Should it arc?
    bool isBallistic;
 
+   /// Should it track target?  
+   bool isGuided;
+   F32 precision;
+   S32 trackDelay;
+
    /// How HIGH should it bounce (parallel to normal), [0,1]
    F32 bounceElasticity;
    /// How much momentum should be lost when it bounces (perpendicular to normal), [0,1]
@@ -179,7 +184,8 @@ public:
    enum UpdateMasks {
       BounceMask    = Parent::NextFreeMask,
       ExplosionMask = Parent::NextFreeMask << 1,
-      NextFreeMask  = Parent::NextFreeMask << 2
+      GuideMask = Parent::NextFreeMask << 2,
+      NextFreeMask  = Parent::NextFreeMask << 3
    };
 
    
@@ -243,6 +249,8 @@ protected:
    PhysicsWorld *mPhysicsWorld;
 
    ProjectileData* mDataBlock;
+   SimObjectPtr<ShapeBase> mTarget;
+   S32 mTargetId;
 
    SimObjectPtr< ParticleEmitter > mParticleEmitter;
    SimObjectPtr< ParticleEmitter > mParticleWaterEmitter;

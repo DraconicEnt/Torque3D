@@ -164,6 +164,10 @@ ProjectileData::ProjectileData()
 
    isBallistic = false;
 
+   isGuided = false;
+   precision = 0;
+   trackDelay = 0;
+
 	velInheritFactor = 1.0f;
 	muzzleVelocity = 50;
    impactForce = 0.0f;
@@ -203,6 +207,9 @@ ProjectileData::ProjectileData(const ProjectileData& other, bool temp_clone) : G
    muzzleVelocity = other.muzzleVelocity;
    impactForce = other.impactForce;
    isBallistic = other.isBallistic;
+   isGuided = other.isGuided;
+   precision = other.precision;
+   trackDelay = other.trackDelay;
    bounceElasticity = other.bounceElasticity;
    bounceFriction = other.bounceFriction;
    gravityMod = other.gravityMod;
@@ -229,6 +236,9 @@ ProjectileData::ProjectileData(const ProjectileData& other, bool temp_clone) : G
    particleWaterEmitterId = other.particleWaterEmitterId; // -- for pack/unpack of particleWaterEmitter ptr
 }
 //--------------------------------------------------------------------------
+
+FRangeValidator projectilePrecisionValidator(0.f, 100.f);
+FRangeValidator projectileTrackDelayValidator(0, 100000);
 
 void ProjectileData::initPersistFields()
 {
@@ -271,6 +281,10 @@ void ProjectileData::initPersistFields()
    addField("isBallistic", TypeBool, Offset(isBallistic, ProjectileData),
       "@brief Detetmines if the projectile should be affected by gravity and whether or not "
       "it bounces before exploding.\n\n");
+
+   addNamedField(isGuided, TypeBool, ProjectileData);
+   addNamedFieldV(precision, TypeF32, ProjectileData, &projectilePrecisionValidator);
+   addNamedFieldV(trackDelay, TypeS32, ProjectileData, &projectileTrackDelayValidator);
 
    addField("velInheritFactor", TypeF32, Offset(velInheritFactor, ProjectileData),
       "@brief Amount of velocity the projectile recieves from the source that created it.\n\n"
@@ -463,6 +477,11 @@ void ProjectileData::packData(BitStream* stream)
       stream->write(bounceFriction);
    }
 
+   if (stream->writeFlag(isGuided))
+   {
+      stream->write(precision);
+      stream->write(trackDelay);
+   }
 }
 
 void ProjectileData::unpackData(BitStream* stream)
@@ -521,6 +540,13 @@ void ProjectileData::unpackData(BitStream* stream)
       stream->read(&gravityMod);
       stream->read(&bounceElasticity);
       stream->read(&bounceFriction);
+   }
+
+   isGuided = stream->readFlag();
+   if (isGuided)
+   {
+      stream->read(&precision);
+      stream->read(&trackDelay);
    }
 }
 
@@ -625,6 +651,8 @@ Projectile::Projectile()
    mLightState.clear();
    mLightState.setLightInfo( mLight );
 
+   mTarget = NULL;
+   mTargetId = -1;
    mDataBlock = 0;
    ignoreSourceTimeout = false;
    dynamicCollisionMask = csmDynamicCollisionMask;
@@ -672,6 +700,7 @@ void Projectile::initPersistFields()
    addField("ignoreSourceTimeout",  TypeBool,   Offset(ignoreSourceTimeout, Projectile));
    endGroup("Source");
 
+   addField("target", TypeS32, Offset(mTargetId, Projectile));
 
    Parent::initPersistFields();
 }
@@ -829,6 +858,18 @@ bool Projectile::onAdd()
          mParticleWaterEmitter = pEmitter;
       }
    }
+
+   // Determine target object
+   ShapeBase* tptr;
+   mTarget = NULL;
+   if (mTargetId != -1)
+   {
+      if (Sim::findObject(mTargetId, tptr))
+         mTarget = tptr;
+      else
+         Con::errorf("Invalid Target!");
+   }
+
    if (mSourceObject.isValid())
       processAfter(mSourceObject);
 
@@ -1145,6 +1186,42 @@ void Projectile::simulate( F32 dt )
    oldPosition = mCurrPosition;
    if ( mDataBlock->isBallistic )
       mCurrVelocity.z -= 9.81 * mDataBlock->gravityMod * dt;
+   if (mDataBlock->isGuided) {
+      // Only process if there is a target and the projectile is locked on
+      if ((bool)mTarget && mCurrTick >= mDataBlock->trackDelay) {
+         // Be sure to update clients on changes
+         setMaskBits(GuideMask);
+         // Set up variables
+         F32 maxSpeed = mDataBlock->muzzleVelocity;
+         F32 targetDist;
+         Point3F targetDir;
+         Point3F targetPos;
+         // Get target position
+         targetPos = mTarget->getBoxCenter();
+         // Calculate direction change necessary to get to target
+         targetDir = targetPos - mCurrPosition;
+         targetDist = targetDir.len();
+         // Normalize target direction
+         targetDir.normalize();
+         // Adjust target direction based on precision and distance
+         targetDir *= ((mDataBlock->precision) / (targetDist * 2));
+         // Combine directions
+         targetDir += mCurrVelocity;
+
+         F32 speed = maxSpeed;
+         if (targetDist < 1)
+         {
+            speed = targetDist;
+            if (speed < 0.1)
+               speed = 0.1;
+         }
+         targetDir.normalize();
+         targetDir *= speed;
+
+         // Set current velocity to new velocity
+         mCurrVelocity = targetDir;
+      }
+   }
 
    newPosition = oldPosition + mCurrVelocity * dt;
 
@@ -1393,6 +1470,12 @@ U32 Projectile::packUpdate( NetConnection *con, U32 mask, BitStream *stream )
       mathWrite(*stream, mCurrVelocity);
    }
 
+   if (stream->writeFlag(mask & GuideMask))
+   {
+      mathWrite(*stream, mCurrPosition);
+      mathWrite(*stream, mCurrVelocity);
+   }
+
    return retMask;
 }
 
@@ -1443,6 +1526,12 @@ void Projectile::unpackUpdate(NetConnection* con, BitStream* stream)
       mCurrBackDelta = mCurrPosition - pos;
       mCurrPosition = pos;
       setPosition( mCurrPosition );
+   }
+
+   if (stream->readFlag()) //GuideMask
+   {
+      mathRead(*stream, &mCurrPosition);
+      mathRead(*stream, &mCurrVelocity);
    }
 }
 
