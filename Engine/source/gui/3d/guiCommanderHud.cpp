@@ -17,8 +17,8 @@
 #include "lighting/lightManager.h"
 #include "lighting/lightInfo.h"
 #include "core/resourceManager.h"
-//#include "sceneGraph/sceneGraph.h"
-//#include "sceneGraph/sceneState.h"
+#include "scene/sceneManager.h"
+#include "scene/sceneRenderState.h"
 #include "gfx/primBuilder.h"
 #include "gfx/gfxDrawUtil.h"
 #include "terrain/terrData.h"
@@ -73,9 +73,30 @@ bool GuiCommanderHud::processCameraQuery(CameraQuery *q)
 {
     // Scale ranges based on the highest/lowest point in the terrain
     F32 maxHi,minHi;
-    minHi = 0;
-    maxHi = 256;
-    //gClientSceneGraph->getCurrentTerrain()->getMinMaxHeight(&minHi,&maxHi);
+    minHi = INFINITY;
+    maxHi = -INFINITY;
+
+    // Enumerate all terrains and look for the min/max heights
+    F32 currentMinimumHeight;
+    F32 currentMaximumHeight;
+    const Vector<SceneObject*>& terrains = gClientSceneGraph->getContainer()->getTerrains();
+    for (U32 iteration = 0; iteration < terrains.size(); ++iteration)
+    {
+       TerrainBlock* terrain = dynamic_cast<TerrainBlock*>(terrains[iteration]);
+       AssertFatal(terrain, "Must have a list of valid TerrainBlock entries!");
+
+       terrain->getMinMaxHeight(&currentMinimumHeight, &currentMaximumHeight);
+
+       if (currentMinimumHeight < minHi)
+       {
+          minHi = currentMinimumHeight;
+       }
+
+       if (currentMaximumHeight > maxHi)
+       {
+          maxHi = currentMaximumHeight;
+       }
+    }
 
     q->object = NULL;
     q->nearPlane = 1;
@@ -217,56 +238,45 @@ void GuiCommanderHud::onRender(Point2I offset, const RectI &updateRect)
     // for all their positions and drawing bitmaps at the appropriate locations.
 }
 
-/*
-DefineEngineMethod(GuiCommanderHud, pan, void, 4, 4, "(x, y) Cut to a location.")
+DefineEngineMethod(GuiCommanderHud, pan, void, (F32 x, F32 y), , "(x, y) Cut to a location.")
 {
-object->mPanGoal.set(dAtof(argv[2]), dAtof(argv[3]));
-object->mCurPan.set (dAtof(argv[2]), dAtof(argv[3]));
+   object->mPanGoal.set(x, y);
+   object->mCurPan.set(x, y);
 }
 
-DefineEngineMethod(GuiCommanderHud, panTo, void, 4, 4, "(x, y) Smoothly pan to a location.")
+DefineEngineMethod(GuiCommanderHud, panTo, void, (F32 x, F32 y), , "(x, y) Smoothly pan to a location.")
 {
-object->mPanGoal.set(dAtof(argv[2]), dAtof(argv[3]));
+   object->mPanGoal.set(x, y);
 }
 
-ConsoleMethod(GuiCommanderHud, zoom, void, 3, 3, "(val) Zoom to a specified level.")
+DefineEngineMethod(GuiCommanderHud, zoom, void, (F32 zoom), , "(val) Zoom to a specified level.")
 {
-object->mZoomGoal = dAtof(argv[2]);
-object->mCurZoom  = dAtof(argv[2]);
+   object->mZoomGoal = zoom;
+   object->mCurZoom = zoom;
 }
 
-ConsoleMethod(GuiCommanderHud, zoomTo, void, 3, 3, "(val) Smoothly zoom to a specified level.")
+DefineEngineMethod(GuiCommanderHud, zoomTo, void, (F32 zoom), , "(val) Smoothly zoom to a specified level.")
 {
-object->mZoomGoal = dAtof(argv[2]);
+   object->mZoomGoal = zoom;
 }
 
-ConsoleMethod(GuiCommanderHud, zoomToArea, void, 6, 7, "(top, left, right, bottom, bool cut) Smoothly zoom to view the specified area. If cut is set, we jump there.")
+DefineEngineMethod(GuiCommanderHud, zoomToArea, void, (F32 top, F32 left, F32 right, F32 bottom, bool cut), , "(top, left, right, bottom, bool cut) Smoothly zoom to view the specified area. If cut is set, we jump there.")
 {
-    // Parse arguments
-    F32 top, left, right, bottom;
+   // Figure out the center of the area
+   Point2F center;
 
-    top    = dAtof(argv[2]);
-    left   = dAtof(argv[3]);
-    right  = dAtof(argv[4]);
-    bottom = dAtof(argv[5]);
+   center.x = (left + right) * 0.5f;
+   center.y = (top + bottom) * 0.5f;
 
-    // Figure out the center of the area
-    Point2F center;
+   object->mZoomGoal = mFabs(left - right) / 200; // Cheesy scaling fakery.
 
-    center.x = (left + right) * 0.5f;
-    center.y = (top + bottom) * 0.5f;
+   // And set our motion
+   object->mPanGoal = center;
 
-    object->mZoomGoal = mFabs(left - right) / 200; // Cheesy scaling fakery.
-
-    // And set our motion
-    object->mPanGoal = center;
-
-    // Cut if requested
-    if(argc > 6)
-        if(dAtob(argv[6]))
-        {
-            object->mCurPan  = object->mPanGoal;
-            object->mCurZoom = object->mZoomGoal;
-        }
+   // Cut if requested
+   if (cut)
+   {
+      object->mCurPan  = object->mPanGoal;
+      object->mCurZoom = object->mZoomGoal;
+   }
 }
- */
