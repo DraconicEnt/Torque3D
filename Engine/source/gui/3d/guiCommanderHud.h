@@ -58,7 +58,8 @@ public:
     void onRightMouseDown(const GuiEvent& event);
     void onRightMouseUp(const GuiEvent& event);
     void onMouseDragged(const GuiEvent &event);
-
+    bool onMouseWheelDown(const GuiEvent& event);
+    bool onMouseWheelUp(const GuiEvent& event);
 
     bool processCameraQuery(CameraQuery *query);
     void renderWorld(const RectI &updateRect);

@@ -92,7 +92,7 @@ void GuiCommanderHud::renderWorld(const RectI &updateRect)
     FrameAllocator::setWaterMark(0);
 
     // If you want to render other things, change this mask.
-    gClientSceneGraph->renderScene(SPT_Diffuse, EnvironmentObjectType | TerrainObjectType | WaterObjectType);
+    gClientSceneGraph->renderScene(SPT_Diffuse, EnvironmentObjectType | TerrainObjectType | WaterObjectType); 
 
     // renderScene leaves some states dirty, which causes problems if GameTSCtrl is the last Gui object rendered
     GFX->updateStates();
@@ -102,6 +102,20 @@ void GuiCommanderHud::renderWorld(const RectI &updateRect)
     FrameAllocator::setWaterMark(0);
 
     PROFILE_END();
+}
+
+bool GuiCommanderHud::onMouseWheelDown(const GuiEvent& event)
+{
+   mZoomGoal -= 50;
+   mCurZoom -= 50;
+   return true;
+}
+
+bool GuiCommanderHud::onMouseWheelUp(const GuiEvent& event)
+{
+   mZoomGoal += 50;
+   mCurZoom += 50;
+   return true;
 }
 
 void GuiCommanderHud::onMouseUp(const GuiEvent &event)
@@ -138,7 +152,7 @@ void GuiCommanderHud::onRightMouseUp(const GuiEvent& event)
 void GuiCommanderHud::onRightMouseDragged(const GuiEvent& event)
 {
     const Point2I mouseDelta = event.mousePoint - mCursorLastPosition;
-    const Point2F mouseDeltaFloat(mouseDelta.x, mouseDelta.y);
+    const Point2F mouseDeltaFloat(-mouseDelta.x, mouseDelta.y);
 
     mPanGoal += mouseDeltaFloat;
     mCurPan += mouseDeltaFloat;
