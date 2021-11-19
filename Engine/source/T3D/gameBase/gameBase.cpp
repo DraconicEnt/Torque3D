@@ -240,7 +240,8 @@ ConsoleDocClass( GameBase,
 GameBase::GameBase()
 : mDataBlock( NULL ),  
   mControllingClient( NULL ),
-  mCurrentWaterObject( NULL )
+  mCurrentWaterObject( NULL ),
+  mTeam(0), mSubTeam(0)
 {
    mNetFlags.set(Ghostable);
    mTypeMask |= GameBaseObjectType;
@@ -614,6 +615,10 @@ U32 GameBase::packUpdate( NetConnection *connection, U32 mask, BitStream *stream
          stream->writeInt(mScope_id, SCOPE_ID_BITS);
    }
 #endif
+
+   stream->write(mTeam);
+   stream->write(mSubTeam);
+
    return retMask;
 }
 
@@ -659,6 +664,9 @@ void GameBase::unpackUpdate(NetConnection *con, BitStream *stream)
 	  mScope_refs = 0;
    }
 #endif
+
+   stream->read(&mTeam);
+   stream->read(&mSubTeam);
 }
 
 void GameBase::onMount( SceneObject *obj, S32 node )
@@ -734,6 +742,13 @@ DefineEngineMethod( GameBase, setDataBlock, bool, ( GameBaseData* data ),,
 }
 
 //----------------------------------------------------------------------------
+void GameBase::setTeam(const U32 team, const U32 subTeam)
+{
+   mTeam = team;
+   mSubTeam = subTeam;
+}
+
+//----------------------------------------------------------------------------
 
 void GameBase::initPersistFields()
 {
@@ -744,6 +759,13 @@ void GameBase::initPersistFields()
          "Script datablock used for game objects." );
 
    endGroup( "Game" );
+
+   addGroup("Team");
+
+      addProtectedField("team", TypeU32, Offset(mTeam, GameBase), &setTeam, &defaultProtectedGetFn, "Current team ID.");
+      addProtectedField("subTeam", TypeU32, Offset(mSubTeam, GameBase), &setSubTeam, &defaultProtectedGetFn, "Current subteam ID.");
+
+   endGroup("Team");
 
    Parent::initPersistFields();
 }

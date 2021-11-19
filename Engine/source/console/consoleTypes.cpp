@@ -352,6 +352,28 @@ ConsoleSetType( TypeS32 )
       Con::printf("(TypeS32) Cannot set multiple args to a single S32.");
 }
 
+//-----------------------------------------------------------------------------
+// TypeU32
+//-----------------------------------------------------------------------------
+ConsoleType(int, TypeU32, U32, "")
+ImplementConsoleTypeCasters(TypeU32, U32)
+
+ConsoleGetType(TypeU32)
+{
+   static const U32 bufSize = 512;
+   char* returnBuffer = Con::getReturnBuffer(bufSize);
+   dSprintf(returnBuffer, bufSize, "%u", *((U32*)dptr));
+   return returnBuffer;
+}
+
+ConsoleSetType(TypeU32)
+{
+   if (argc == 1)
+      *((U32*)dptr) = dAtoui(argv[0]);
+   else
+      Con::printf("(TypeU32) Cannot set multiple args to a single U32.");
+}
+
 
 //-----------------------------------------------------------------------------
 // TypeS32Vector

@@ -460,6 +460,32 @@ public:
    DECLARE_CALLBACK( void, setControl, ( bool controlled ) );
    /// @}
 
+   /// @name Team Interface
+   /// @{
+protected:
+   U32 mTeam;
+   U32 mSubTeam;
+
+   static bool setTeam(void* pObject, const char* pArray, const char* pData)
+   {
+      GameBase* gameBaseObject = static_cast<GameBase*>(pObject);
+      gameBaseObject->setTeam(dAtoui(pData), gameBaseObject->mSubTeam);
+      return false;
+   };
+
+   static bool setSubTeam(void* pObject, const char* pArray, const char* pData)
+   {
+      GameBase* gameBaseObject = static_cast<GameBase*>(pObject);
+      gameBaseObject->setTeam(gameBaseObject->mTeam, dAtoui(pData));
+      return false;
+   };
+
+public:
+   void setTeam(const U32 team, const U32 subTeam);
+
+   /// @}
+
+
 private:
 
    /// This is called by the reload signal in our datablock when it is 
