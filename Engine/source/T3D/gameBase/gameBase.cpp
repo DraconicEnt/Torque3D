@@ -129,6 +129,8 @@ GameBaseData::GameBaseData()
 {
    mCategory = "";
    mPacked = false;
+   mSensorData = NULL;
+   mSensorDataID = 0;
 }
 GameBaseData::GameBaseData(const GameBaseData& other, bool temp_clone) : SimDataBlock(other, temp_clone)
 {
@@ -164,6 +166,13 @@ void GameBaseData::initPersistFields()
 
    endGroup("Scripting");
 
+   addGroup("Sensor");
+
+      addField("sensorData", TYPEID< SensorData >(), Offset(mSensorData, GameBaseData),
+         "@brief Sensor data to be used on this object.");
+
+   endGroup("Sensor");
+
    Parent::initPersistFields();
 }
 
@@ -172,13 +181,34 @@ bool GameBaseData::preload(bool server, String &errorStr)
    if (!Parent::preload(server, errorStr))
       return false;
    mPacked = false;
+
+   // Load up sensor data if present
+   if (!mSensorData && mSensorDataID != 0)
+      if (!Sim::findObject(mSensorDataID, mSensorData))
+         Con::errorf(ConsoleLogEntry::General, "GameBaseData::preload - Invalid packet, bad datablockId(sensorData): 0x%x", mSensorDataID);
+
    return true;
+}
+
+void GameBaseData::packData(BitStream* stream)
+{
+   Parent::packData(stream);
+
+   if (stream->writeFlag(mSensorData))
+   {
+      stream->writeRangedU32(mSensorData->getId(), DataBlockObjectIdFirst, DataBlockObjectIdLast);
+   }
 }
 
 void GameBaseData::unpackData(BitStream* stream)
 {
    Parent::unpackData(stream);
    mPacked = true;
+
+   if (stream->readFlag())
+   {
+      mSensorDataID = (S32)stream->readRangedU32(DataBlockObjectIdFirst, DataBlockObjectIdLast);
+   }
 }
 
 //----------------------------------------------------------------------------

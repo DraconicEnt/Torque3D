@@ -51,6 +51,8 @@
 #include "T3D/gameBase/moveManager.h"
 #endif
 
+#include "BOL/sensorData.h"
+
 class NetConnection;
 class ProcessList;
 class GameBase;
@@ -104,7 +106,13 @@ public:
    // Triggers the reload signal.
    void inspectPostApply();
 
-   bool onAdd();   
+   bool onAdd();
+
+   /// The sensor data description.
+   SensorData* mSensorData;
+   S32 mSensorDataID;
+
+   void packData(BitStream* stream);
 
    // The derived class should provide the following:
    DECLARE_CONOBJECT(GameBaseData);

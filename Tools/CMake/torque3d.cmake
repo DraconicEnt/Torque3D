@@ -293,6 +293,7 @@ addPath("${srcDir}/windowManager/test")
 addPath("${srcDir}/math")
 addPath("${srcDir}/math/util")
 addPath("${srcDir}/math/test")
+addPath("${srcDir}/BOL")
 
 addPath("${srcDir}/platform")
 if(NOT TORQUE_SDL)
