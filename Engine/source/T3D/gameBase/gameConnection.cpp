@@ -64,8 +64,8 @@
 
 #define ControlRequestTime 5000
 
-const U32 GameConnection::CurrentProtocolVersion = 12;
-const U32 GameConnection::MinRequiredProtocolVersion = 12;
+const U32 GameConnection::CurrentProtocolVersion = 11595;
+const U32 GameConnection::MinRequiredProtocolVersion = 11595;
 
 //----------------------------------------------------------------------------
 
@@ -165,6 +165,9 @@ IMPLEMENT_CALLBACK( GameConnection, onDataBlocksDone, void, (U32 sequence), (seq
    "the server every time a mission is loaded.\n\n"
    "@see GameConnection::transmitDataBlocks()\n\n");
 
+IMPLEMENT_CALLBACK( GameConnection, onTeamInformationUpdated, void, (U32 team, U32 subTeam), (team, subTeam),
+                    "@brief Called on the client when team information has been updated.\n\n");
+
 IMPLEMENT_GLOBAL_CALLBACK( onDataBlockObjectReceived, void, (U32 index, U32 total), (index, total),
    "@brief Called on the client each time a datablock has been received.\n\n"
    "This callback is typically used to notify the player of how far along "
@@ -260,6 +263,10 @@ GameConnection::GameConnection()
    mAddPitchToAbsRot = false;
 
    mVisibleGhostDistance = 0.0f;
+
+   // Default team information
+   mTeam = 0;
+   mSubTeam = 0;
 
    clearDisplayDevice();
 }
@@ -1308,6 +1315,15 @@ void GameConnection::readPacket(BitStream *bstream)
       }
    }
 
+    // Read team update
+    if (bstream->readFlag())
+    {
+        bstream->read(&mTeam);
+        bstream->read(&mSubTeam);
+
+        onTeamInformationUpdated_callback(mTeam, mSubTeam);
+    }
+
    Parent::readPacket(bstream);
    bstream->clearCompressionPoint();
    bstream->clearStringBuffer();
@@ -1503,6 +1519,14 @@ void GameConnection::writePacket(BitStream *bstream, PacketNotify *note)
          mUpdateCameraFov = false;
       }
       DEBUG_LOG(("PKLOG %d PINGCAMSTATE: %d", getId(), bstream->getCurPos() - startPos));
+   }
+
+   // Write team update
+   if (bstream->writeFlag(mUpdateTeamInformation))
+   {
+       bstream->write(mTeam);
+       bstream->write(mSubTeam);
+       mUpdateTeamInformation = false;
    }
 
    Parent::writePacket(bstream, note);
@@ -1752,6 +1776,32 @@ void GameConnection::handleConnectionMessage(U32 message, U32 sequence, U32 ghos
       }
    }
    Parent::handleConnectionMessage(message, sequence, ghostCount);
+}
+
+//----------------------------------------------------------------------------
+
+DefineEngineMethod( GameConnection, setTeam, void, (U32 team),,
+    "@brief Sets the team number of the specified connection.")
+{
+    object->setTeam(team);
+}
+
+DefineEngineMethod( GameConnection, setSubTeam, void, (U32 subTeam),,
+                    "@brief Sets the team number of the specified connection.")
+{
+    object->setSubTeam(subTeam);
+}
+
+DefineEngineMethod( GameConnection, getTeam, S32, (),,
+                    "@brief Sets the team number of the specified connection.")
+{
+    return object->getTeam();
+}
+
+DefineEngineMethod( GameConnection, getSubTeam, S32, (),,
+                    "@brief Sets the team number of the specified connection.")
+{
+    return object->getSubTeam();
 }
 
 //----------------------------------------------------------------------------

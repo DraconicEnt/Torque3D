@@ -112,6 +112,13 @@ private:
    bool  mAddPitchToAbsRot;      ///< Add relative pitch control to the absolute rotation calculation.  Only useful with mAbsoluteRotation.
    /// @}
 
+   /// @name Client team Information
+   /// @{
+   bool mUpdateTeamInformation;
+   U32 mTeam;
+   U32 mSubTeam;
+   /// @}
+
 public:
 
    /// @name Protocol Versions
@@ -330,6 +337,31 @@ public:
 
    /// @}
 
+   /// @name Team Management
+   /// @{
+   void setTeam(const U32 team)
+   {
+       mTeam = team;
+       mUpdateTeamInformation = true;
+   }
+
+   void setSubTeam(const U32 subTeam)
+   {
+       mSubTeam = subTeam;
+       mUpdateTeamInformation = true;
+   }
+
+   U32 getTeam()
+   {
+       return mTeam;
+   }
+
+   U32 getSubTeam()
+   {
+       return mSubTeam;
+   }
+   /// @}
+
    /// @name Fade control
    /// @{
 
@@ -384,6 +416,7 @@ protected:
    DECLARE_CALLBACK( void, onControlObjectChange, () );
    DECLARE_CALLBACK( void, setLagIcon, (bool state) );
    DECLARE_CALLBACK( void, onDataBlocksDone, (U32 sequence) );
+   DECLARE_CALLBACK( void, onTeamInformationUpdated, (U32 team, U32 subTeam) );
    DECLARE_CALLBACK( void, onFlash, (bool state) );
 
 #ifdef TORQUE_AFX_ENABLED
