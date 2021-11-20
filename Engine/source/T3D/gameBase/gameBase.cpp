@@ -324,6 +324,7 @@ bool GameBase::onAdd()
 
    setProcessTick( true );
 
+   TeamManager::smActiveTeamManager->setTeamAssociation(this, mTeam);
    return true;
 }
 
@@ -337,6 +338,7 @@ void GameBase::onRemove()
    if ( mDataBlock )
       mDataBlock->mReloadSignal.remove( this, &GameBase::_onDatablockModified );
 
+   TeamManager::smActiveTeamManager->removeObject(this);
    Parent::onRemove();
 }
 
@@ -774,9 +776,23 @@ DefineEngineMethod( GameBase, setDataBlock, bool, ( GameBaseData* data ),,
 //----------------------------------------------------------------------------
 void GameBase::setTeam(const U32 team, const U32 subTeam)
 {
+   // Set team association before updating team number
+   TeamManager::smActiveTeamManager->setTeamAssociation(this, team);
+
    mTeam = team;
    mSubTeam = subTeam;
 }
+
+U32 GameBase::getTeam()
+{
+    return mTeam;
+}
+
+U32 GameBase::getSubTeam()
+{
+    return mSubTeam;
+}
+
 
 //----------------------------------------------------------------------------
 

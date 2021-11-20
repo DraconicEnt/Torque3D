@@ -52,6 +52,7 @@
 #endif
 
 #include "BOL/sensorData.h"
+#include "BOL/teamManager.h"
 
 class NetConnection;
 class ProcessList;
@@ -490,6 +491,8 @@ protected:
 
 public:
    void setTeam(const U32 team, const U32 subTeam);
+    U32 getTeam();
+    U32 getSubTeam();
 
    /// @}
 
