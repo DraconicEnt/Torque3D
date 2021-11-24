@@ -238,9 +238,8 @@ void GuiReticleCtrl::onRender(Point2I offset, const RectI &updateRect)
                            VectorF eyePos;
                            eyeMatrix.getColumn(3, &eyePos);
 
-                           // Make sure the eye vector covers the distance.
-                           const F32 distance = 1000.0f;
-                           eyeVector *= distance;
+                           // Make sure the eye vector covers the distance
+                           eyeVector *= mountedImage->operationalDistance;
 
                            // Perform actual raycast
                            VectorF start = eyePos;

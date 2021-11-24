@@ -180,6 +180,7 @@ ShapeBaseImageData::ShapeBaseImageData()
 
    usesEnergy = false;
    convergenceEnabled = false;
+   operationalDistance = 0.0f;
    minEnergy = 2;
    accuFire = false;
 
@@ -711,6 +712,9 @@ void ShapeBaseImageData::initPersistFields()
    addField("convergenceEnabled", TypeBool, Offset(convergenceEnabled, ShapeBaseImageData),
       "@brief Flag indicating whether or not convergence is enabled for this weapon image.");
 
+   addField("operationalDistance", TypeF32, Offset(operationalDistance, ShapeBaseImageData),
+      "@brief Field controlling the max operational distance of the weapon. This field is used primarily by guiReticleCtrl.");
+
    addField( "minEnergy", TypeF32, Offset(minEnergy, ShapeBaseImageData),
       "@brief Minimum Image energy for it to be operable.\n\n"
       "@see usesEnergy");
@@ -1010,6 +1014,7 @@ void ShapeBaseImageData::packData(BitStream* stream)
    stream->write(mass);
    stream->writeFlag(usesEnergy);
    stream->writeFlag(convergenceEnabled);
+   stream->write(operationalDistance);
    stream->write(minEnergy);
 
    for( U32 j=0; j<MaxShapes; ++j)
@@ -1199,6 +1204,7 @@ void ShapeBaseImageData::unpackData(BitStream* stream)
    stream->read(&mass);
    usesEnergy = stream->readFlag();
    convergenceEnabled = stream->readFlag();
+   stream->read(&operationalDistance);
    stream->read(&minEnergy);
 
    for( U32 j=0; j<MaxShapes; ++j )
