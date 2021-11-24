@@ -179,6 +179,7 @@ ShapeBaseImageData::ShapeBaseImageData()
    mass = 0;
 
    usesEnergy = false;
+   convergenceEnabled = false;
    minEnergy = 2;
    accuFire = false;
 
@@ -707,6 +708,9 @@ void ShapeBaseImageData::initPersistFields()
       "@brief Flag indicating whether this Image uses energy instead of ammo.  The energy level comes from the ShapeBase object we're mounted to.\n\n"
       "@see ShapeBase::setEnergyLevel()");
 
+   addField("convergenceEnabled", TypeBool, Offset(convergenceEnabled, ShapeBaseImageData),
+      "@brief Flag indicating whether or not convergence is enabled for this weapon image.");
+
    addField( "minEnergy", TypeF32, Offset(minEnergy, ShapeBaseImageData),
       "@brief Minimum Image energy for it to be operable.\n\n"
       "@see usesEnergy");
@@ -1005,6 +1009,7 @@ void ShapeBaseImageData::packData(BitStream* stream)
    stream->writeFlag(firstPerson);
    stream->write(mass);
    stream->writeFlag(usesEnergy);
+   stream->writeFlag(convergenceEnabled);
    stream->write(minEnergy);
 
    for( U32 j=0; j<MaxShapes; ++j)
@@ -1193,6 +1198,7 @@ void ShapeBaseImageData::unpackData(BitStream* stream)
    firstPerson = stream->readFlag();
    stream->read(&mass);
    usesEnergy = stream->readFlag();
+   convergenceEnabled = stream->readFlag();
    stream->read(&minEnergy);
 
    for( U32 j=0; j<MaxShapes; ++j )

@@ -398,6 +398,7 @@ struct ShapeBaseImageData: public GameBaseData {
 
    F32   mass;                      ///< Mass!
    bool  usesEnergy;                ///< Does this use energy instead of ammo?
+   bool  convergenceEnabled;        ///< Is convergence enabled when firing?
    F32   minEnergy;                 ///< Minimum energy for the weapon to be operable.
    bool  accuFire;                  ///< Should we automatically make image's aim converge with the crosshair?
    bool  cloakable;                 ///< Is this image cloakable when mounted?
