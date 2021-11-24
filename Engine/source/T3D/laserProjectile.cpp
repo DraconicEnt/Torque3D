@@ -79,19 +79,13 @@ void LaserProjectileData::initPersistFields() {
    addField("fadeBegin", TypeS32, Offset(fadeBegin, LaserProjectileData),
       "@brief Time (in MS) from the deletion of the beam that fading begins");
 
-    INITPERSISTFIELD_IMAGEASSET_ARRAY(materialList, 6, LaserProjectileData, "@brief The 6 cubemap face textures for a static cubemap.\n\n"
-                                       "They are in the following order:\n"
-                                       "  - cubeFace[0] is -X\n"
-                                       "  - cubeFace[1] is +X\n"
-                                       "  - cubeFace[2] is -Z\n"
-                                       "  - cubeFace[3] is +Z\n"
-                                       "  - cubeFace[4] is -Y\n"
-                                       "  - cubeFace[5] is +Y\n");
+    INITPERSISTFIELD_IMAGEASSET_ARRAY(materialList, maxTextures, LaserProjectileData, "The textures to cycle through when rendering the laser.");
 
 }
 
 //--------------------------------------------------------------------------
-void LaserProjectileData::packData(BitStream* stream) {
+void LaserProjectileData::packData(BitStream* stream)
+{
    Parent::packData(stream);
 
 	stream->write(beamStartRadius);
@@ -103,17 +97,16 @@ void LaserProjectileData::packData(BitStream* stream) {
 
 	stream->write(fadeBegin);
 
-	stream->write(mBeamColor.red);
-	stream->write(mBeamColor.green);
-	stream->write(mBeamColor.blue);
+   stream->write(mBeamColor);
 
-    for( U32 i=0; i< maxTextures; i++ )
-    {
-        PACKDATA_ASSET_ARRAY(materialList, i);
-    }
+   for( U32 i=0; i< maxTextures; i++ )
+   {
+      PACKDATA_ASSET_ARRAY(materialList, i);
+   }
 }
 
-void LaserProjectileData::unpackData(BitStream* stream) {
+void LaserProjectileData::unpackData(BitStream* stream)
+{
    Parent::unpackData(stream);
 
    stream->read(&beamStartRadius);
@@ -125,14 +118,12 @@ void LaserProjectileData::unpackData(BitStream* stream) {
 
 	stream->read(&fadeBegin);
 
-	stream->read(&mBeamColor.red);
-	stream->read(&mBeamColor.green);
-	stream->read(&mBeamColor.blue);
+   stream->read(&mBeamColor);
 
-    for( U32 i=0; i< maxTextures; i++ )
-    {
-        UNPACKDATA_ASSET_ARRAY(materialList, i);
-    }
+   for( U32 i=0; i< maxTextures; i++ )
+   {
+      UNPACKDATA_ASSET_ARRAY(materialList, i);
+   }
 }
 
 bool LaserProjectileData::preload(bool server, String &errorStr) {

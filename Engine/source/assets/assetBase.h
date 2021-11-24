@@ -47,6 +47,11 @@ extern StringTableEntry assetInternalField;
 extern StringTableEntry assetPrivateField;
 extern StringTableEntry assetAutoUnloadField;
 
+extern StringTableEntry assetSourceURLField;
+extern StringTableEntry assetAuthorNameField;
+extern StringTableEntry assetLicenseField;
+extern StringTableEntry assetAuthorURLField;
+
 //#define ASSET_BASE_ASSETNAME_FIELD         "AssetName"
 //#define ASSET_BASE_ASSETDESCRIPTION_FIELD  "AssetDescription"
 //#define ASSET_BASE_ASSETCATEGORY_FIELD     "AssetCategory"
@@ -113,6 +118,19 @@ public:
    inline S32              getAcquiredReferenceCount(void) const             { return mAcquireReferenceCount; }
    inline bool             getOwned(void) const                              { return mpOwningAssetManager != NULL; }
 
+   /// Asset source / licensing information.
+   inline void             setAssetLicense(const char* pAssetLicense) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mLicense = StringTable->insert(pAssetLicense); }
+   inline StringTableEntry getAssetLicense(void) const { return mpAssetDefinition ? mpAssetDefinition->mLicense : StringTable->EmptyString(); }
+
+   inline void             setAssetSourceURL(const char* pAssetSourceURL) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mSourceURL = StringTable->insert(pAssetSourceURL); }
+   inline StringTableEntry getAssetSourceURL(void) const { return mpAssetDefinition ? mpAssetDefinition->mSourceURL : StringTable->EmptyString(); }
+
+   inline void             setAssetAuthorName(const char* pAssetAuthorName) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mAuthorName = StringTable->insert(pAssetAuthorName); }
+   inline StringTableEntry getAssetAuthorName(void) const { return mpAssetDefinition ? mpAssetDefinition->mAuthorName : StringTable->EmptyString(); }
+
+   inline void             setAssetAuthorURL(const char* pAssetSourceURL) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mAuthorURL = StringTable->insert(pAssetSourceURL); }
+   inline StringTableEntry getAssetAuthorURL(void) const { return mpAssetDefinition ? mpAssetDefinition->mAuthorURL : StringTable->EmptyString(); }
+
    // Asset Id is only available once registered with the asset manager.
    inline StringTableEntry getAssetId(void) const { return mpAssetDefinition ? mpAssetDefinition->mAssetId : StringTable->EmptyString(); }
 
@@ -160,6 +178,23 @@ protected:
    static bool             writeAssetInternal(void* obj, StringTableEntry pFieldName) { return static_cast<AssetBase*>(obj)->getAssetInternal() == true; }
 
    static const char*      getAssetPrivate(void* obj, const char* data)        { return Con::getBoolArg(static_cast<AssetBase*>(obj)->getAssetPrivate()); }
+
+   /// Internal asset licensing / source information functionsd
+   static bool             setAssetSourceURL(void* obj, const char* array, const char* data) { static_cast<AssetBase*>(obj)->setAssetSourceURL(data); return false; }
+   static const char*      getAssetSourceURL(void* obj, const char* data) { return static_cast<AssetBase*>(obj)->getAssetSourceURL(); }
+   static bool             writeAssetSourceURL(void* obj, StringTableEntry pFieldName) { return static_cast<AssetBase*>(obj)->getAssetSourceURL() != StringTable->EmptyString(); }
+
+   static bool             setAssetAuthorName(void* obj, const char* array, const char* data) { static_cast<AssetBase*>(obj)->setAssetAuthorName(data); return false; }
+   static const char*      getAssetAuthorName(void* obj, const char* data) { return static_cast<AssetBase*>(obj)->getAssetAuthorName(); }
+   static bool             writeAssetAuthorName(void* obj, StringTableEntry pFieldName) { return static_cast<AssetBase*>(obj)->getAssetAuthorName() != StringTable->EmptyString(); }
+
+   static bool             setAssetLicense(void* obj, const char* array, const char* data) { static_cast<AssetBase*>(obj)->setAssetLicense(data); return false; }
+   static const char*      getAssetLicense(void* obj, const char* data) { return static_cast<AssetBase*>(obj)->getAssetLicense(); }
+   static bool             writeAssetLicense(void* obj, StringTableEntry pFieldName) { return static_cast<AssetBase*>(obj)->getAssetLicense() != StringTable->EmptyString(); }
+
+   static bool             setAssetAuthorURL(void* obj, const char* array, const char* data) { static_cast<AssetBase*>(obj)->setAssetAuthorURL(data); return false; }
+   static const char*      getAssetAuthorURL(void* obj, const char* data) { return static_cast<AssetBase*>(obj)->getAssetAuthorURL(); }
+   static bool             writeAssetAuthorURL(void* obj, StringTableEntry pFieldName) { return static_cast<AssetBase*>(obj)->getAssetAuthorURL() != StringTable->EmptyString(); }
 
 private:
    void                    acquireAssetReference(void);
