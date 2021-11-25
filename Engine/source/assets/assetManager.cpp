@@ -350,6 +350,10 @@ StringTableEntry AssetManager::addPrivateAsset( AssetBase* pAssetBase )
     // Configure asset.
     pAssetDefinition->mpAssetBase = pAssetBase;
     pAssetDefinition->mAssetDescription = pSourceAssetDefinition->mAssetDescription;
+    pAssetDefinition->mAssetLicense = pSourceAssetDefinition->mAssetLicense;
+    pAssetDefinition->mAssetAuthorName = pSourceAssetDefinition->mAssetAuthorName;
+    pAssetDefinition->mAssetAuthorURL = pSourceAssetDefinition->mAssetAuthorURL;
+    pAssetDefinition->mAssetSourceURL = pSourceAssetDefinition->mAssetSourceURL;
     pAssetDefinition->mAssetCategory = pSourceAssetDefinition->mAssetCategory;
     pAssetDefinition->mAssetAutoUnload = true;
     pAssetDefinition->mAssetRefreshEnable = false;

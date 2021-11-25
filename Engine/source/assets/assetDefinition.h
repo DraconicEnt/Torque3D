@@ -76,10 +76,10 @@ public:
         mAssetPrivate = false;
         mAssetType = StringTable->EmptyString();
         mAssetCategory = StringTable->EmptyString();
-        mLicense = StringTable->EmptyString();
-        mSourceURL = StringTable->EmptyString();
-        mAuthorName = StringTable->EmptyString();
-        mAuthorURL = StringTable->EmptyString();
+        mAssetLicense = StringTable->EmptyString();
+        mAssetSourceURL = StringTable->EmptyString();
+        mAssetAuthorName = StringTable->EmptyString();
+        mAssetAuthorURL = StringTable->EmptyString();
     }
 
     ModuleDefinition*           mpModuleDefinition;
@@ -102,10 +102,10 @@ public:
     StringTableEntry            mAssetCategory;
 
     /// Licensing / source information
-    StringTableEntry mLicense;
-    StringTableEntry mSourceURL;
-    StringTableEntry mAuthorName;
-    StringTableEntry mAuthorURL;
+    StringTableEntry mAssetLicense;
+    StringTableEntry mAssetSourceURL;
+    StringTableEntry mAssetAuthorName;
+    StringTableEntry mAssetAuthorURL;
 };
 
 #endif // _ASSET_DEFINITION_H_

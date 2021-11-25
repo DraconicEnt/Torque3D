@@ -466,10 +466,10 @@ void AssetBase::setOwned(AssetManager* pAssetManager, AssetDefinition* pAssetDef
    AssertFatal(mpAssetDefinition->mAssetAutoUnload == pAssetDefinition->mAssetAutoUnload, "Asset ownership differs by asset auto-unload flag.");
    AssertFatal(mpAssetDefinition->mAssetInternal == pAssetDefinition->mAssetInternal, "Asset ownership differs by asset internal flag.");
 
-   AssertFatal(mpAssetDefinition->mSourceURL == pAssetDefinition->mSourceURL, "Asset ownership differs by source URL.");
-   AssertFatal(mpAssetDefinition->mAuthorURL == pAssetDefinition->mAuthorURL, "Asset ownership differs by author URL.");
-   AssertFatal(mpAssetDefinition->mLicense == pAssetDefinition->mLicense, "Asset ownership differs by license.");
-   AssertFatal(mpAssetDefinition->mAuthorName == pAssetDefinition->mAuthorName, "Asset ownership differs by author name.");
+   AssertFatal(mpAssetDefinition->mAssetSourceURL == pAssetDefinition->mAssetSourceURL, "Asset ownership differs by source URL.");
+   AssertFatal(mpAssetDefinition->mAssetAuthorURL == pAssetDefinition->mAssetAuthorURL, "Asset ownership differs by author URL.");
+   AssertFatal(mpAssetDefinition->mAssetLicense == pAssetDefinition->mAssetLicense, "Asset ownership differs by license.");
+   AssertFatal(mpAssetDefinition->mAssetAuthorName == pAssetDefinition->mAssetAuthorName, "Asset ownership differs by author name.");
 
 
    // Transfer asset definition ownership state.

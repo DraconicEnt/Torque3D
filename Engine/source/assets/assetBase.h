@@ -119,17 +119,17 @@ public:
    inline bool             getOwned(void) const                              { return mpOwningAssetManager != NULL; }
 
    /// Asset source / licensing information.
-   inline void             setAssetLicense(const char* pAssetLicense) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mLicense = StringTable->insert(pAssetLicense); }
-   inline StringTableEntry getAssetLicense(void) const { return mpAssetDefinition ? mpAssetDefinition->mLicense : StringTable->EmptyString(); }
+   inline void             setAssetLicense(const char* pAssetLicense) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mAssetLicense = StringTable->insert(pAssetLicense); }
+   inline StringTableEntry getAssetLicense(void) const { return mpAssetDefinition ? mpAssetDefinition->mAssetLicense : StringTable->EmptyString(); }
 
-   inline void             setAssetSourceURL(const char* pAssetSourceURL) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mSourceURL = StringTable->insert(pAssetSourceURL); }
-   inline StringTableEntry getAssetSourceURL(void) const { return mpAssetDefinition ? mpAssetDefinition->mSourceURL : StringTable->EmptyString(); }
+   inline void             setAssetSourceURL(const char* pAssetSourceURL) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mAssetSourceURL = StringTable->insert(pAssetSourceURL); }
+   inline StringTableEntry getAssetSourceURL(void) const { return mpAssetDefinition ? mpAssetDefinition->mAssetSourceURL : StringTable->EmptyString(); }
 
-   inline void             setAssetAuthorName(const char* pAssetAuthorName) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mAuthorName = StringTable->insert(pAssetAuthorName); }
-   inline StringTableEntry getAssetAuthorName(void) const { return mpAssetDefinition ? mpAssetDefinition->mAuthorName : StringTable->EmptyString(); }
+   inline void             setAssetAuthorName(const char* pAssetAuthorName) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mAssetAuthorName = StringTable->insert(pAssetAuthorName); }
+   inline StringTableEntry getAssetAuthorName(void) const { return mpAssetDefinition ? mpAssetDefinition->mAssetAuthorName : StringTable->EmptyString(); }
 
-   inline void             setAssetAuthorURL(const char* pAssetSourceURL) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mAuthorURL = StringTable->insert(pAssetSourceURL); }
-   inline StringTableEntry getAssetAuthorURL(void) const { return mpAssetDefinition ? mpAssetDefinition->mAuthorURL : StringTable->EmptyString(); }
+   inline void             setAssetAuthorURL(const char* pAssetSourceURL) { if (mpOwningAssetManager == NULL) mpAssetDefinition->mAssetAuthorURL = StringTable->insert(pAssetSourceURL); }
+   inline StringTableEntry getAssetAuthorURL(void) const { return mpAssetDefinition ? mpAssetDefinition->mAssetAuthorURL : StringTable->EmptyString(); }
 
    // Asset Id is only available once registered with the asset manager.
    inline StringTableEntry getAssetId(void) const { return mpAssetDefinition ? mpAssetDefinition->mAssetId : StringTable->EmptyString(); }
