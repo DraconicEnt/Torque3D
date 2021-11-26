@@ -359,6 +359,7 @@ public:
 
     /// Asset queries.
     S32 findAllAssets( AssetQuery* pAssetQuery, const bool ignoreInternal = true, const bool ignorePrivate = true );
+    S32 findAssetModule(AssetQuery* pAssetQuery, const char* pAssetModule);
     S32 findAssetName( AssetQuery* pAssetQuery, const char* pAssetName, const bool partialName = false );
     S32 findAssetCategory( AssetQuery* pAssetQuery, const char* pAssetCategory, const bool assetQueryAsSource = false );
     S32 findAssetAutoUnload( AssetQuery* pAssetQuery, const bool assetAutoUnload, const bool assetQueryAsSource = false );

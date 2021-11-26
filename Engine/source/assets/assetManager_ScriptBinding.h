@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Copyright (c) 2013 GarageGames, LLC
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -481,6 +481,33 @@ DefineEngineMethod(AssetManager, findAssetName, S32, (const char* assetQuery, co
 
     // Perform query.
     return object->findAssetName( pAssetQuery, pAssetName, partialName );
+}
+
+//-----------------------------------------------------------------------------
+
+DefineEngineMethod(AssetManager, findAssetModule, S32, (const char* assetQuery, const char* moduleName), ("", ""),
+   "Performs an asset query searching assets in the specified modlule.\n"
+   "@param assetQuery The asset query object that will be populated with the results.\n"
+   "@param moduleName The module name to search for.\n"
+   "@return The number of asset Ids found or (-1) if an error occurred.\n")
+{
+   // Fetch asset query.
+   AssetQuery* pAssetQuery;
+   Sim::findObject(assetQuery, pAssetQuery);
+
+   // Did we find the asset query?
+   if (pAssetQuery == NULL)
+   {
+      // No, so warn.
+      Con::warnf("AssetManager::findAssetModule() - Could not find the asset query object '%s'.", assetQuery);
+      return -1;
+   }
+
+   // Fetch asset name.
+   const char* pAssetModule = moduleName;
+
+   // Perform query.
+   return object->findAssetModule(pAssetQuery, pAssetModule);
 }
 
 //-----------------------------------------------------------------------------

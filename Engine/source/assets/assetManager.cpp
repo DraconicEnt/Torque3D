@@ -1665,6 +1665,43 @@ S32 AssetManager::findAllAssets( AssetQuery* pAssetQuery, const bool ignoreInter
 
 //-----------------------------------------------------------------------------
 
+S32 AssetManager::findAssetModule(AssetQuery* pAssetQuery, const char* pAssetModule)
+{
+   // Debug Profiling.
+   PROFILE_SCOPE(AssetManager_FindAssetName);
+
+   // Sanity!
+   AssertFatal(pAssetQuery != NULL, "Cannot use NULL asset query.");
+   AssertFatal(pAssetModule != NULL, "Cannot use NULL module name.");
+
+   StringTableEntry moduleName = StringTable->insert(pAssetModule);
+
+   // Reset result count.
+   S32 resultCount = 0;
+
+   // Iterate declared assets.
+   for (typeDeclaredAssetsHash::iterator assetItr = mDeclaredAssets.begin(); assetItr != mDeclaredAssets.end(); ++assetItr)
+   {
+      // Fetch asset definition.
+      AssetDefinition* pAssetDefinition = assetItr->value;
+
+      if (pAssetDefinition->mpModuleDefinition->getModuleId() != moduleName)
+      {
+         continue;
+      }
+
+      // Store as result.
+      pAssetQuery->mAssetList.push_back(pAssetDefinition->mAssetId);
+
+      // Increase result count.
+      resultCount++;
+   }
+
+   return resultCount;
+}
+
+//-----------------------------------------------------------------------------
+
 S32 AssetManager::findAssetName( AssetQuery* pAssetQuery, const char* pAssetName, const bool partialName )
 {
     // Debug Profiling.
