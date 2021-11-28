@@ -24,7 +24,7 @@
 #include "terrain/terrData.h"
 #include "gfx/gfxTransformSaver.h"
 
-#include "gui/3d/guiCommanderHud.h"
+#include "BOL/gui/guiCommanderHud.h"
 
 IMPLEMENT_CONOBJECT( GuiCommanderHud );
 

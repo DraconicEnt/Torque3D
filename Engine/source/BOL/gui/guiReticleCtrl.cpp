@@ -21,7 +21,7 @@
 //-----------------------------------------------------------------------------
 
 #include "platform/platform.h"
-#include "gui/controls/guiReticleCtrl.h"
+#include "BOL/gui/guiReticleCtrl.h"
 
 #include "console/console.h"
 #include "console/consoleTypes.h"
