@@ -16,17 +16,7 @@ ConsoleDocClass( GuiRadarChartCtrl,
 
 GuiRadarChartCtrl::GuiRadarChartCtrl() : GuiControl()
 {
-    mNumberOfSides = 4;
     mRotation = 0.0f;
-    mOuterWidth = 10.0f;
-    mChartDivisor = 2.0f;
-    mOuterColor = ColorI::RED;
-    mInnerColor = ColorI::GREEN;
-    mDataSetColor = ColorI::BLUE;
-
-    INIT_ASSET(InnerBitmap);
-    INIT_ASSET(OuterBitmap);
-    INIT_ASSET(DataSetBitmap);
 
     for (U32 iteration = 0; iteration < maxSides; ++iteration)
     {
@@ -39,18 +29,8 @@ void GuiRadarChartCtrl::initPersistFields()
 {
     addGroup("Chart");
         addField("rotatation", TypeF32, Offset(mRotation, GuiRadarChartCtrl), "rotation");
-        addField("numberOfSides", TypeU32, Offset(mNumberOfSides, GuiRadarChartCtrl), "Number of sides");
-        addField("outerColor", TypeColorI, Offset(mOuterColor, GuiRadarChartCtrl), "Outer color");
-        addField("innerColor", TypeColorI, Offset(mInnerColor, GuiRadarChartCtrl), "Inner color");
-        addField("dataSetColor", TypeColorI, Offset(mDataSetColor, GuiRadarChartCtrl), "Data set color");
-        addField("outerWidth", TypeF32, Offset(mOuterWidth, GuiRadarChartCtrl), "Outer width");
-        addField("chartDivisor", TypeF32, Offset(mChartDivisor, GuiRadarChartCtrl), "Chart divisor - used for scaling");
         addField("vertexStrengths", TypeF32, Offset(mVertexStrengths, GuiRadarChartCtrl), maxSides, "Vertex strengths.");
         addField("vertexTexts", TypeString, Offset(mVertexTexts, GuiRadarChartCtrl), maxSides, "Vertex texts");
-
-        INITPERSISTFIELD_IMAGEASSET(OuterBitmap, GuiRadarChartCtrl, The bitmap file to display the outer edges);
-        INITPERSISTFIELD_IMAGEASSET(InnerBitmap, GuiRadarChartCtrl, The bitmap file to display in the inside);
-        INITPERSISTFIELD_IMAGEASSET(DataSetBitmap, GuiRadarChartCtrl, The bitmap file to display on the dataset);
     endGroup("Chart");
 
     Parent::initPersistFields();
@@ -109,44 +89,50 @@ static inline void constructRadiatingPolygonOuterPoints(U32 numberOfSides, F32 r
 
 void GuiRadarChartCtrl::onRender(Point2I offset, const RectI &updateRect)
 {
+    GuiRadarChartCtrlProfile* profile = dynamic_cast<GuiRadarChartCtrlProfile*>(mProfile);
+    if (!profile)
+    {
+        return;
+    }
+
     const Point2I& currentExtent = getExtent();
     const Point2I centerPoint = offset + (currentExtent / 2);
 
     Vector<Point3F> outerVertices;
-    constructPolygonOuterPoints(mNumberOfSides, mRotation, mChartDivisor, centerPoint, currentExtent, outerVertices);
+    constructPolygonOuterPoints(profile->mNumberOfSides, mRotation, profile->mChartDivisor, centerPoint, currentExtent, outerVertices);
     
     // Render inner filler polygon
     GFXStateBlockDesc description;
     Vector<Point3F> innerTriangles;
     constructPolygonTriangles(outerVertices, centerPoint, innerTriangles);
-    GFX->getDrawUtil()->drawPolygonTexture(description, innerTriangles.address(), innerTriangles.size(), mInnerColor, NULL, mInnerBitmap);
+    GFX->getDrawUtil()->drawPolygonTexture(description, innerTriangles.address(), innerTriangles.size(), GFXDrawUtil::UVMode::RadialMap, profile->mInnerColor, NULL, profile->mInnerBitmap);
 
     // Render outside edges
     GFX->getDrawUtil()->clearBitmapModulation();
-    GFX->getDrawUtil()->setBitmapModulation(mOuterColor);
-    for (U32 iteration = 0; iteration < mNumberOfSides; ++iteration)
+    GFX->getDrawUtil()->setBitmapModulation(profile->mOuterColor);
+    for (U32 iteration = 0; iteration < profile->mNumberOfSides; ++iteration)
     {
-        U32 nextIndex = (iteration + 1) % mNumberOfSides;
+        U32 nextIndex = (iteration + 1) % profile->mNumberOfSides;
 
         const Point3F& currentVertex = outerVertices[iteration];
         const Point3F& nextVertex = outerVertices[nextIndex];
 
         GFX->getDrawUtil()->drawLineWidthTextured(currentVertex.x, currentVertex.y, 0.0f,
                                                   nextVertex.x, nextVertex.y, 0.0f,
-                                                  mOuterColor, mOuterWidth, mOuterBitmap);
+                                                  profile->mOuterColor, profile->mOuterWidth, profile->mOuterBitmap);
     }
 
     // Render data set
     Vector<Point3F> dataSetOuterVertices;
-    constructRadiatingPolygonOuterPoints(mNumberOfSides, mRotation, mChartDivisor, centerPoint, currentExtent, mVertexStrengths, mNumberOfSides, dataSetOuterVertices);
+    constructRadiatingPolygonOuterPoints(profile->mNumberOfSides, mRotation, profile->mChartDivisor, centerPoint, currentExtent, mVertexStrengths, profile->mNumberOfSides, dataSetOuterVertices);
 
     Vector<Point3F> dataSetTriangles;
     constructPolygonTriangles(dataSetOuterVertices, centerPoint, dataSetTriangles);
 
-    GFX->getDrawUtil()->drawPolygonTexture(description, dataSetTriangles.address(), dataSetTriangles.size(), mDataSetColor, NULL, mDataSetBitmap);
+    GFX->getDrawUtil()->drawPolygonTexture(description, dataSetTriangles.address(), dataSetTriangles.size(), GFXDrawUtil::UVMode::RadialMap, profile->mDataSetColor, NULL, profile->mDataSetBitmap);
 
     // Render text on each point
-    for (U32 iteration = 0; iteration < mNumberOfSides; ++iteration)
+    for (U32 iteration = 0; iteration < profile->mNumberOfSides; ++iteration)
     {
         if (mVertexTexts[iteration] != StringTable->EmptyString())
         {
@@ -157,4 +143,48 @@ void GuiRadarChartCtrl::onRender(Point2I offset, const RectI &updateRect)
     }
 
     Parent::onRender(offset, updateRect);
+}
+
+//-----------------------------------------------------------------------------
+// Console stuff (GuiRadarChartCtrlProfile)
+//-----------------------------------------------------------------------------
+
+IMPLEMENT_CONOBJECT(GuiRadarChartCtrlProfile);
+
+ConsoleDocClass( GuiRadarChartCtrlProfile,
+ "@brief A GuiControlProfile with additional fields specific to GuiRadarChartCtrl.\n\n"
+
+     "@ingroup GuiGame"
+);
+
+GuiRadarChartCtrlProfile::GuiRadarChartCtrlProfile() : GuiControlProfile()
+{
+    mOuterWidth = 10.0f;
+    mChartDivisor = 2.0f;
+    mOuterColor = ColorI::RED;
+    mInnerColor = ColorI::GREEN;
+    mDataSetColor = ColorI::BLUE;
+    mNumberOfSides = 4;
+
+    INIT_ASSET(InnerBitmap);
+    INIT_ASSET(OuterBitmap);
+    INIT_ASSET(DataSetBitmap);
+}
+
+void GuiRadarChartCtrlProfile::initPersistFields()
+{
+    addGroup("Chart");
+        addField("numberOfSides", TypeU32, Offset(mNumberOfSides, GuiRadarChartCtrlProfile), "Number of sides");
+        addField("outerColor", TypeColorI, Offset(mOuterColor, GuiRadarChartCtrlProfile), "Outer color");
+        addField("innerColor", TypeColorI, Offset(mInnerColor, GuiRadarChartCtrlProfile), "Inner color");
+        addField("dataSetColor", TypeColorI, Offset(mDataSetColor, GuiRadarChartCtrlProfile), "Data set color");
+        addField("outerWidth", TypeF32, Offset(mOuterWidth, GuiRadarChartCtrlProfile), "Outer width");
+        addField("chartDivisor", TypeF32, Offset(mChartDivisor, GuiRadarChartCtrlProfile), "Chart divisor - used for scaling");
+
+        INITPERSISTFIELD_IMAGEASSET(OuterBitmap, GuiRadarChartCtrlProfile, The bitmap file to display the outer edges);
+        INITPERSISTFIELD_IMAGEASSET(InnerBitmap, GuiRadarChartCtrlProfile, The bitmap file to display in the inside);
+        INITPERSISTFIELD_IMAGEASSET(DataSetBitmap, GuiRadarChartCtrlProfile, The bitmap file to display on the dataset);
+    endGroup("Chart");
+
+    Parent::initPersistFields();
 }

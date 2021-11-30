@@ -857,10 +857,10 @@ void GFXDrawUtil::_drawSolidTriangle( const GFXStateBlockDesc &desc, const Point
 
 void GFXDrawUtil::drawPolygon( const GFXStateBlockDesc& desc, const Point3F* points, U32 numPoints, const ColorI& color, const MatrixF* xfm /* = NULL */ )
 {
-    drawPolygonTexture(desc, points, numPoints, color, xfm, NULL);
+    drawPolygonTexture(desc, points, numPoints, UVMode::TextureMap, color, xfm, NULL);
 }
 
-void GFXDrawUtil::drawPolygonTexture( const GFXStateBlockDesc& desc, const Point3F* points, U32 numPoints, const ColorI& color, const MatrixF* xfm /* = NULL */, GFXTexHandle texture)
+void GFXDrawUtil::drawPolygonTexture( const GFXStateBlockDesc& desc, const Point3F* points, U32 numPoints, UVMode uvMode, const ColorI& color, const MatrixF* xfm /* = NULL */, GFXTexHandle texture)
 {
    const bool isWireframe = ( desc.fillMode == GFXFillWireframe );
    const U32 numVerts = isWireframe ? numPoints + 1 : numPoints;
@@ -895,11 +895,27 @@ void GFXDrawUtil::drawPolygonTexture( const GFXStateBlockDesc& desc, const Point
 
    const Point2F shapeDimensions = Point2F(lowerRight.x - upperLeft.x, lowerRight.y - upperLeft.y);
 
+   Point2F radialMapUVs[3] =
+   {
+       Point2F(0.0f, -1.0f),
+       Point2F(-1.0f, 1.0f),
+       Point2F(1.0f, 1.0f)
+   };
+
    for( U32 i = 0; i < numPoints; ++ i )
    {
       verts[ i ].point = points[ i ];
       verts[ i ].color = color;
-      verts[ i ].texCoord = Point2F(points[i].x / shapeDimensions.x, points[i].y / shapeDimensions.y);
+
+      switch (uvMode)
+      {
+          case UVMode::TextureMap:
+              verts[ i ].texCoord = Point2F(points[i].x / shapeDimensions.x, points[i].y / shapeDimensions.y);
+              break;
+          case UVMode::RadialMap:
+              verts[ i ].texCoord = radialMapUVs[i % 3];
+              break;
+      }
    }
 
    if( xfm )

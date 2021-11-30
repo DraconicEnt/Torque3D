@@ -4,6 +4,8 @@
 #include "gui/core/guiControl.h"
 #endif
 
+class GuiRadarChartCtrlProfile;
+
 class GuiRadarChartCtrl : public GuiControl
 {
 public:
@@ -11,13 +13,7 @@ public:
     typedef GuiControl Parent;
 
 protected:
-    U32 mNumberOfSides;
     F32 mRotation;
-    ColorI mOuterColor;
-    ColorI mInnerColor;
-    ColorI mDataSetColor;
-    F32 mOuterWidth;
-    F32 mChartDivisor;
 
     enum RadarChartConstants {
         maxSides = 16,
@@ -25,20 +21,6 @@ protected:
 
     F32 mVertexStrengths[maxSides];
     StringTableEntry mVertexTexts[maxSides];
-
-    /// Name of the bitmap used for drawing the outer border. If not specified, a colored line is drawn.
-    DECLARE_IMAGEASSET(GuiRadarChartCtrl, OuterBitmap, onOuterImageChanged, GFXDefaultGUIProfile);
-    DECLARE_ASSET_SETGET(GuiRadarChartCtrl, OuterBitmap);
-
-    DECLARE_IMAGEASSET(GuiRadarChartCtrl, InnerBitmap, onInnerImageChanged, GFXDefaultGUIProfile);
-    DECLARE_ASSET_SETGET(GuiRadarChartCtrl, InnerBitmap);
-
-    DECLARE_IMAGEASSET(GuiRadarChartCtrl, DataSetBitmap, onDataSetImageChanged, GFXDefaultGUIProfile);
-    DECLARE_ASSET_SETGET(GuiRadarChartCtrl, DataSetBitmap);
-
-    void onOuterImageChanged() {}
-    void onInnerImageChanged() {}
-    void onDataSetImageChanged() {}
 
 public:
 
@@ -50,4 +32,39 @@ public:
     DECLARE_CONOBJECT( GuiRadarChartCtrl );
     DECLARE_CATEGORY( "Gui Images" );
     DECLARE_DESCRIPTION( "A control that indicates relative strengths on a polygon." );
+};
+
+class GuiRadarChartCtrlProfile : public GuiControlProfile
+{
+    typedef GuiControlProfile Parent;
+
+public:
+    U32 mNumberOfSides;
+    ColorI mOuterColor;
+    ColorI mInnerColor;
+    ColorI mDataSetColor;
+    F32 mOuterWidth;
+    F32 mChartDivisor;
+
+    /// Name of the bitmap used for drawing the outer border. If not specified, a colored line is drawn.
+    DECLARE_IMAGEASSET(GuiRadarChartCtrlProfile, OuterBitmap, onOuterImageChanged, GFXDefaultGUIProfile);
+    DECLARE_ASSET_SETGET(GuiRadarChartCtrlProfile, OuterBitmap);
+
+    DECLARE_IMAGEASSET(GuiRadarChartCtrlProfile, InnerBitmap, onInnerImageChanged, GFXDefaultGUIProfile);
+    DECLARE_ASSET_SETGET(GuiRadarChartCtrlProfile, InnerBitmap);
+
+    DECLARE_IMAGEASSET(GuiRadarChartCtrlProfile, DataSetBitmap, onDataSetImageChanged, GFXDefaultGUIProfile);
+    DECLARE_ASSET_SETGET(GuiRadarChartCtrlProfile, DataSetBitmap);
+
+    void onOuterImageChanged() {}
+    void onInnerImageChanged() {}
+    void onDataSetImageChanged() {}
+
+
+    GuiRadarChartCtrlProfile();
+
+    DECLARE_CONOBJECT(GuiRadarChartCtrlProfile);
+
+    /// Initializes fields accessible through the console.
+    static void initPersistFields();
 };
