@@ -69,6 +69,9 @@ public:
    void drawLine( F32 x1, F32 y1, F32 x2, F32 y2, const ColorI &color );
    void drawLine( F32 x1, F32 y1, F32 z1, F32 x2, F32 y2, F32 z2, const ColorI &color );
 
+   void drawLineWidth( F32 x1, F32 y1, F32 z1, F32 x2, F32 y2, F32 z2, const ColorI& color, F32 width);
+   void drawLineWidthTextured( F32 x1, F32 y1, F32 z1, F32 x2, F32 y2, F32 z2, const ColorI& color, F32 width, GFXTextureObject* texture);
+
    //-----------------------------------------------------------------------------
    // Draw Text
    //-----------------------------------------------------------------------------

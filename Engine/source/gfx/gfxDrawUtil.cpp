@@ -648,6 +648,66 @@ void GFXDrawUtil::drawLine( F32 x1, F32 y1, F32 z1, F32 x2, F32 y2, F32 z2, cons
    mDevice->drawPrimitive( GFXLineList, 0, 1 );
 }
 
+void GFXDrawUtil::drawLineWidth( F32 x1, F32 y1, F32 z1, F32 x2, F32 y2, F32 z2, const ColorI& color, F32 width)
+{
+    drawLineWidthTextured(x1, y1, z1, x2, y2, z2, color, width, NULL);
+}
+
+void GFXDrawUtil::drawLineWidthTextured( F32 x1, F32 y1, F32 z1, F32 x2, F32 y2, F32 z2, const ColorI& color, F32 width, GFXTextureObject* texture)
+{
+    GFXVertexBufferHandle<GFXVertexPCT> verts( mDevice, 4, GFXBufferTypeVolatile );
+    verts.lock();
+
+    // We generate 4 vertices to draw a box, to do this we take the angle between the two points
+    // and use that to determine the alignment of the box
+    F32 angle = mAtan2(y1 - y2, x1 - x2);
+    F32 angleLeft = angle - Float_HalfPi;
+    F32 angleRight = angle + Float_HalfPi;
+
+    F32 leftX = cos(angleLeft) * (width / 2);
+    F32 leftY = sin(angleLeft) * (width / 2);
+    F32 rightX = cos(angleRight) * (width / 2);
+    F32 rightY = sin(angleRight) * (width / 2);
+
+    // Once we have the angles calculated, use this information to generate a line
+    verts[0].point.set( x1 + leftX, y1 + leftY, z1 );
+    verts[1].point.set( x1 + rightX, y1 + rightY, z2 );
+    verts[2].point.set( x2 + leftX, y2 + leftY, z1 );
+    verts[3].point.set( x2 + rightX, y2 + rightY, z2 );
+
+    verts[0].color = color;
+    verts[1].color = color;
+    verts[2].color = color;
+    verts[3].color = color;
+
+    // FIXME: Calculate
+    if (texture)
+    {
+        verts[0].texCoord.set( -1.0f,  -1.0f );
+        verts[1].texCoord.set( 1.0f, -1.0f );
+        verts[2].texCoord.set( -1.0f,  1.0f );
+        verts[3].texCoord.set( 1.0f, 1.0f );
+    }
+
+    verts.unlock();
+
+    mDevice->setVertexBuffer( verts );
+
+    if (texture)
+    {
+        mDevice->setStateBlock(mBitmapStretchSB);
+        mDevice->setTexture(0, texture);
+        mDevice->setupGenericShaders(GFXDevice::GSModColorTexture);
+    }
+    else
+    {
+        mDevice->setStateBlock( mRectFillSB );
+        mDevice->setupGenericShaders();
+    }
+
+    mDevice->drawPrimitive( GFXTriangleStrip, 0, 2 );
+}
+
 //-----------------------------------------------------------------------------
 // 3D World Draw Misc
 //-----------------------------------------------------------------------------

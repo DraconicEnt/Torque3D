@@ -165,7 +165,7 @@ void GuiReticleCtrl::drawBitmapCentered(GFXTexHandle texture, const Point2I& pos
    const S32 bitmapHalfWidth = texture->getWidth() / 2;
    const S32 bitmapHalfHeight = texture->getHeight() / 2;
 
-   GFX->getDrawUtil()->drawBitmap(mBitmap, position - Point2I(bitmapHalfWidth, bitmapHalfHeight), GFXBitmapFlip_None, GFXTextureFilterLinear, true, mAngle);
+   GFX->getDrawUtil()->drawBitmap(texture, position - Point2I(bitmapHalfWidth, bitmapHalfHeight), GFXBitmapFlip_None, GFXTextureFilterLinear, true, mAngle);
 }
 
 GuiTSCtrl* GuiReticleCtrl::getTSControl()
@@ -188,7 +188,6 @@ GuiTSCtrl* GuiReticleCtrl::getTSControl()
 
 void GuiReticleCtrl::onRender(Point2I offset, const RectI &updateRect)
 {
-
    if (mBitmap)
    {
       GFX->getDrawUtil()->clearBitmapModulation();
