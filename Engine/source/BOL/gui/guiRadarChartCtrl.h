@@ -29,6 +29,9 @@ public:
 
     void onRender(Point2I offset, const RectI &updateRect);
 
+    bool onWake();
+    void onSleep();
+
 DECLARE_CONOBJECT( GuiRadarChartCtrl );
     DECLARE_CATEGORY( "Gui Images" );
     DECLARE_DESCRIPTION( "A control that indicates relative strengths on a polygon." );

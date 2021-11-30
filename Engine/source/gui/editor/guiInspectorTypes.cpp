@@ -593,11 +593,15 @@ void GuiInspectorTypeFileName::updateValue()
 {
    if ( mField )
    {
-      Parent::updateValue();
       const char* data = getData();
-      if(!data)
-         data = "";
-      mEdit->setDataField( StringTable->insert("tooltip"), NULL, data );
+
+
+       if(!data)
+           data = "";
+       mEdit->setDataField( StringTable->insert("tooltip"), NULL, data );
+
+      Parent::updateValue();
+
    }
 }
 

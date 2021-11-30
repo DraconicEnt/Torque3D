@@ -20,15 +20,19 @@ GuiRadarChartCtrl::GuiRadarChartCtrl() : GuiControl()
     mRotation = 0.0f;
     mOuterWidth = 10.0f;
     mOuterColor = ColorI::RED;
+
+    INIT_ASSET(OuterBitmap);
 }
 
 void GuiRadarChartCtrl::initPersistFields()
 {
-    addField("rotatation", TypeF32, Offset(mRotation, GuiRadarChartCtrl), "rotation");
-    addField("numberOfSides", TypeU32, Offset(mNumberOfSides, GuiRadarChartCtrl), "Number of sides");
-    addField("outerColor", TypeColorI, Offset(mOuterColor, GuiRadarChartCtrl), "Outer color");
-    addField("outerWidth", TypeF32, Offset(mOuterWidth, GuiRadarChartCtrl), "Outer width");
-    INITPERSISTFIELD_IMAGEASSET(OuterBitmap, GuiRadarChartCtrl, The bitmap file to display the outer edges.);
+    addGroup("Chart");
+       addField("rotatation", TypeF32, Offset(mRotation, GuiRadarChartCtrl), "rotation");
+       addField("numberOfSides", TypeU32, Offset(mNumberOfSides, GuiRadarChartCtrl), "Number of sides");
+       addField("outerColor", TypeColorI, Offset(mOuterColor, GuiRadarChartCtrl), "Outer color");
+       addField("outerWidth", TypeF32, Offset(mOuterWidth, GuiRadarChartCtrl), "Outer width");
+       INITPERSISTFIELD_IMAGEASSET(OuterBitmap, GuiRadarChartCtrl, The bitmap file to display the outer edges.);
+    endGroup("Chart");
 
     Parent::initPersistFields();
 }
@@ -76,4 +80,22 @@ void GuiRadarChartCtrl::onRender(Point2I offset, const RectI &updateRect)
     }
 
     Parent::onRender(offset, updateRect);
+}
+
+bool GuiRadarChartCtrl::onWake()
+{
+    if (! Parent::onWake())
+        return false;
+    setActive(true);
+
+    _setOuterBitmap(StringTable->insert(getOuterBitmap()));
+    return true;
+}
+
+void GuiRadarChartCtrl::onSleep()
+{
+    if ( mOuterBitmapName != StringTable->insert("texhandle") )
+        mOuterBitmap = NULL;
+
+    Parent::onSleep();
 }
