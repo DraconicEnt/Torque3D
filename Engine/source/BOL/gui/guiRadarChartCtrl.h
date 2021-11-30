@@ -14,13 +14,31 @@ protected:
     U32 mNumberOfSides;
     F32 mRotation;
     ColorI mOuterColor;
+    ColorI mInnerColor;
+    ColorI mDataSetColor;
     F32 mOuterWidth;
+    F32 mChartDivisor;
+
+    enum RadarChartConstants {
+        maxSides = 16,
+    };
+
+    F32 mVertexStrengths[maxSides];
+    StringTableEntry mVertexTexts[maxSides];
 
     /// Name of the bitmap used for drawing the outer border. If not specified, a colored line is drawn.
     DECLARE_IMAGEASSET(GuiRadarChartCtrl, OuterBitmap, onOuterImageChanged, GFXDefaultGUIProfile);
     DECLARE_ASSET_SETGET(GuiRadarChartCtrl, OuterBitmap);
 
+    DECLARE_IMAGEASSET(GuiRadarChartCtrl, InnerBitmap, onInnerImageChanged, GFXDefaultGUIProfile);
+    DECLARE_ASSET_SETGET(GuiRadarChartCtrl, InnerBitmap);
+
+    DECLARE_IMAGEASSET(GuiRadarChartCtrl, DataSetBitmap, onDataSetImageChanged, GFXDefaultGUIProfile);
+    DECLARE_ASSET_SETGET(GuiRadarChartCtrl, DataSetBitmap);
+
     void onOuterImageChanged() {}
+    void onInnerImageChanged() {}
+    void onDataSetImageChanged() {}
 
 public:
 
@@ -29,7 +47,7 @@ public:
 
     void onRender(Point2I offset, const RectI &updateRect);
 
-DECLARE_CONOBJECT( GuiRadarChartCtrl );
+    DECLARE_CONOBJECT( GuiRadarChartCtrl );
     DECLARE_CATEGORY( "Gui Images" );
     DECLARE_DESCRIPTION( "A control that indicates relative strengths on a polygon." );
 };
