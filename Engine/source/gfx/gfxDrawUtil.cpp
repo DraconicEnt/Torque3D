@@ -857,10 +857,10 @@ void GFXDrawUtil::_drawSolidTriangle( const GFXStateBlockDesc &desc, const Point
 
 void GFXDrawUtil::drawPolygon( const GFXStateBlockDesc& desc, const Point3F* points, U32 numPoints, const ColorI& color, const MatrixF* xfm /* = NULL */ )
 {
-    drawPolygonTexture(desc, points, numPoints, UVMode::TextureMap, color, xfm, NULL);
+    drawPolygonTexture(desc, points, numPoints, NULL, UVMode::TextureMap, color, xfm, NULL);
 }
 
-void GFXDrawUtil::drawPolygonTexture( const GFXStateBlockDesc& desc, const Point3F* points, U32 numPoints, UVMode uvMode, const ColorI& color, const MatrixF* xfm /* = NULL */, GFXTexHandle texture)
+void GFXDrawUtil::drawPolygonTexture( const GFXStateBlockDesc& desc, const Point3F* points, U32 numPoints, const ColorI* pointColors, UVMode uvMode, const ColorI& color, const MatrixF* xfm /* = NULL */, GFXTexHandle texture)
 {
    const bool isWireframe = ( desc.fillMode == GFXFillWireframe );
    const U32 numVerts = isWireframe ? numPoints + 1 : numPoints;
@@ -905,7 +905,15 @@ void GFXDrawUtil::drawPolygonTexture( const GFXStateBlockDesc& desc, const Point
    for( U32 i = 0; i < numPoints; ++ i )
    {
       verts[ i ].point = points[ i ];
-      verts[ i ].color = color;
+
+      if (pointColors)
+      {
+          verts[ i ].color = pointColors[i];
+      }
+      else
+      {
+          verts[ i ].color = color;
+      }
 
       switch (uvMode)
       {

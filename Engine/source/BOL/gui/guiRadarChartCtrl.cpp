@@ -20,7 +20,9 @@ GuiRadarChartCtrl::GuiRadarChartCtrl() : GuiControl()
 
     for (U32 iteration = 0; iteration < maxSides; ++iteration)
     {
-        mVertexStrengths[iteration] = 0.0f;
+        mVertexValues[iteration] = 50.0f;
+        mVertexMaxValues[iteration] = 100.0f;
+        mVertexColors[iteration] = ColorI::WHITE;
         mVertexTexts[iteration] = StringTable->EmptyString();
     }
 }
@@ -29,8 +31,10 @@ void GuiRadarChartCtrl::initPersistFields()
 {
     addGroup("Chart");
         addField("rotatation", TypeF32, Offset(mRotation, GuiRadarChartCtrl), "rotation");
-        addField("vertexStrengths", TypeF32, Offset(mVertexStrengths, GuiRadarChartCtrl), maxSides, "Vertex strengths.");
+        addField("vertexValues", TypeF32, Offset(mVertexValues, GuiRadarChartCtrl), maxSides, "Vertex strengths.");
+        addField("vertexMaxValues", TypeF32, Offset(mVertexMaxValues, GuiRadarChartCtrl), maxSides, "Vertex max values.");
         addField("vertexTexts", TypeString, Offset(mVertexTexts, GuiRadarChartCtrl), maxSides, "Vertex texts");
+        addField("vertexColors", TypeColorI, Offset(mVertexColors, GuiRadarChartCtrl), maxSides, "Vertex colors.");
     endGroup("Chart");
 
     Parent::initPersistFields();
@@ -105,7 +109,14 @@ void GuiRadarChartCtrl::onRender(Point2I offset, const RectI &updateRect)
     GFXStateBlockDesc description;
     Vector<Point3F> innerTriangles;
     constructPolygonTriangles(outerVertices, centerPoint, innerTriangles);
-    GFX->getDrawUtil()->drawPolygonTexture(description, innerTriangles.address(), innerTriangles.size(), GFXDrawUtil::UVMode::RadialMap, profile->mInnerColor, NULL, profile->mInnerBitmap);
+    GFX->getDrawUtil()->drawPolygonTexture(description,
+                                           innerTriangles.address(),
+                                           innerTriangles.size(),
+                                           NULL,
+                                           GFXDrawUtil::UVMode::RadialMap,
+                                           profile->mInnerColor,
+                                           NULL,
+                                           profile->mInnerBitmap);
 
     // Render outside edges
     GFX->getDrawUtil()->clearBitmapModulation();
@@ -123,13 +134,34 @@ void GuiRadarChartCtrl::onRender(Point2I offset, const RectI &updateRect)
     }
 
     // Render data set
+    Vector<F32> dataSetStrengths;
+    for (U32 iteration = 0; iteration < profile->mNumberOfSides; ++iteration)
+    {
+        const F32 sideValue = std::min(mVertexMaxValues[iteration], mVertexValues[iteration]);
+        dataSetStrengths.push_back(sideValue /  mVertexMaxValues[iteration]);
+    }
+
     Vector<Point3F> dataSetOuterVertices;
-    constructRadiatingPolygonOuterPoints(profile->mNumberOfSides, mRotation, profile->mChartDivisor, centerPoint, currentExtent, mVertexStrengths, profile->mNumberOfSides, dataSetOuterVertices);
+    constructRadiatingPolygonOuterPoints(profile->mNumberOfSides,
+                                         mRotation,
+                                         profile->mChartDivisor,
+                                         centerPoint,
+                                         currentExtent,
+                                         dataSetStrengths.address(),
+                                         profile->mNumberOfSides,
+                                         dataSetOuterVertices);
 
     Vector<Point3F> dataSetTriangles;
     constructPolygonTriangles(dataSetOuterVertices, centerPoint, dataSetTriangles);
 
-    GFX->getDrawUtil()->drawPolygonTexture(description, dataSetTriangles.address(), dataSetTriangles.size(), GFXDrawUtil::UVMode::RadialMap, profile->mDataSetColor, NULL, profile->mDataSetBitmap);
+    GFX->getDrawUtil()->drawPolygonTexture(description,
+                                           dataSetTriangles.address(),
+                                           dataSetTriangles.size(),
+                                           mVertexColors,
+                                           GFXDrawUtil::UVMode::RadialMap,
+                                           profile->mDataSetColor,
+                                           NULL,
+                                           profile->mDataSetBitmap);
 
     // Render text on each point
     for (U32 iteration = 0; iteration < profile->mNumberOfSides; ++iteration)

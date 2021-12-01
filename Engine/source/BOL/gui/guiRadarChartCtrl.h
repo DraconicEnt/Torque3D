@@ -19,7 +19,9 @@ protected:
         maxSides = 16,
     };
 
-    F32 mVertexStrengths[maxSides];
+    F32 mVertexMaxValues[maxSides];
+    F32 mVertexValues[maxSides];
+    ColorI mVertexColors[maxSides];
     StringTableEntry mVertexTexts[maxSides];
 
 public:
