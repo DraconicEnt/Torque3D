@@ -46,6 +46,7 @@ public:
     ColorI mInnerColor;
     ColorI mDataSetColor;
     F32 mOuterWidth;
+    bool mShowValues;
     F32 mChartDivisor;
 
     /// Name of the bitmap used for drawing the outer border. If not specified, a colored line is drawn.

@@ -164,7 +164,17 @@ void GuiRadarChartCtrl::onRender(Point2I offset, const RectI &updateRect)
                                            NULL,
                                            profile->mDataSetBitmap);
 
-    // Render text on each point
+    // Render values on each data set point
+    for (U32 iteration = 0; iteration < profile->mNumberOfSides; ++iteration)
+    {
+        char valueString[32];
+        dSprintf(valueString, sizeof(valueString), "%f", mVertexValues[iteration]);
+
+        const Point3F& currentVertex = dataSetOuterVertices[iteration];
+        renderJustifiedText(Point2I(currentVertex.x, currentVertex.y), Point2I(25, 25), valueString);
+    }
+
+    // Render text on each outer point
     for (U32 iteration = 0; iteration < profile->mNumberOfSides; ++iteration)
     {
         if (mVertexTexts[iteration] != StringTable->EmptyString())
@@ -195,6 +205,7 @@ GuiRadarChartCtrlProfile::GuiRadarChartCtrlProfile() : GuiControlProfile()
 {
     mOuterWidth = 10.0f;
     mChartDivisor = 2.0f;
+    mShowValues = true;
     mOuterColor = ColorI::RED;
     mInnerColor = ColorI::GREEN;
     mDataSetColor = ColorI::BLUE;
@@ -214,6 +225,7 @@ void GuiRadarChartCtrlProfile::initPersistFields()
         addField("dataSetColor", TypeColorI, Offset(mDataSetColor, GuiRadarChartCtrlProfile), "Data set color");
         addField("outerWidth", TypeF32, Offset(mOuterWidth, GuiRadarChartCtrlProfile), "Outer width");
         addField("chartDivisor", TypeF32, Offset(mChartDivisor, GuiRadarChartCtrlProfile), "Chart divisor - used for scaling");
+        addField("showValues", TypeBool, Offset(mShowValues, GuiRadarChartCtrlProfile), "Show values at each point of the data set.");
 
         INITPERSISTFIELD_IMAGEASSET(OuterBitmap, GuiRadarChartCtrlProfile, The bitmap file to display the outer edges);
         INITPERSISTFIELD_IMAGEASSET(InnerBitmap, GuiRadarChartCtrlProfile, The bitmap file to display in the inside);
