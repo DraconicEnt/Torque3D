@@ -1086,15 +1086,16 @@ void TSStatic::unpackUpdate(NetConnection* con, BitStream* stream)
 
       stream->read(&mForceDetail);
 
-   if (stream->readFlag())
-      mAnimOffset = stream->readFloat(7);
+      if (stream->readFlag())
+         mAnimOffset = stream->readFloat(7);
 
-   if (stream->readFlag())
-      mAnimSpeed = stream->readSignedFloat(7) * AnimSpeedMax;
+      if (stream->readFlag())
+         mAnimSpeed = stream->readSignedFloat(7) * AnimSpeedMax;
 
       mPlayAmbient = stream->readFlag();
 
-
+      //update our shape, figuring that it likely changed
+      _createShape();
    }
 
    mUseAlphaFade = stream->readFlag();
@@ -1586,7 +1587,7 @@ U32 TSStatic::getNumDetails()
 
 void TSStatic::updateMaterials()
 {
-   if (mChangingMaterials.empty() || !mShape)
+   if (mChangingMaterials.empty() || !mShapeInstance)
       return;
 
    TSMaterialList* pMatList = mShapeInstance->getMaterialList();

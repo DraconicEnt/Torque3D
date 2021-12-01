@@ -109,8 +109,15 @@ public:
    //-----------------------------------------------------------------------------
    // Draw 3D Shapes
    //-----------------------------------------------------------------------------
+   enum UVMode
+   {
+       TextureMap,
+       RadialMap
+   };
+
    void drawTriangle( const GFXStateBlockDesc &desc, const Point3F &p0, const Point3F &p1, const Point3F &p2, const ColorI &color, const MatrixF *xfm = NULL );
    void drawPolygon( const GFXStateBlockDesc& desc, const Point3F* points, U32 numPoints, const ColorI& color, const MatrixF* xfm = NULL );
+   void drawPolygonTexture( const GFXStateBlockDesc& desc, const Point3F* points, U32 numPoints, const ColorI* pointColors, UVMode uvMode, const ColorI& color, const MatrixF* xfm = NULL, GFXTexHandle texture = NULL );
    void drawCube( const GFXStateBlockDesc &desc, const Point3F &size, const Point3F &pos, const ColorI &color, const MatrixF *xfm = NULL );   
    void drawCube( const GFXStateBlockDesc &desc, const Box3F &box, const ColorI &color, const MatrixF *xfm = NULL );   
    void drawObjectBox( const GFXStateBlockDesc &desc, const Point3F &size, const Point3F &pos, const MatrixF &objMat, const ColorI &color );   
