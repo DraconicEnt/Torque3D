@@ -44,7 +44,6 @@ public:
     U32 mNumberOfSides;
     ColorI mOuterColor;
     ColorI mInnerColor;
-    ColorI mDataSetColor;
     F32 mOuterWidth;
     bool mShowValues;
     F32 mChartDivisor;

@@ -160,7 +160,7 @@ void GuiRadarChartCtrl::onRender(Point2I offset, const RectI &updateRect)
                                            dataSetTriangles.size(),
                                            mVertexColors,
                                            GFXDrawUtil::UVMode::RadialMap,
-                                           profile->mDataSetColor,
+                                           ColorI::BLACK,
                                            NULL,
                                            profile->mDataSetBitmap);
 
@@ -208,7 +208,6 @@ GuiRadarChartCtrlProfile::GuiRadarChartCtrlProfile() : GuiControlProfile()
     mShowValues = true;
     mOuterColor = ColorI::RED;
     mInnerColor = ColorI::GREEN;
-    mDataSetColor = ColorI::BLUE;
     mNumberOfSides = 4;
 
     INIT_ASSET(InnerBitmap);
@@ -222,7 +221,6 @@ void GuiRadarChartCtrlProfile::initPersistFields()
         addField("numberOfSides", TypeU32, Offset(mNumberOfSides, GuiRadarChartCtrlProfile), "Number of sides");
         addField("outerColor", TypeColorI, Offset(mOuterColor, GuiRadarChartCtrlProfile), "Outer color");
         addField("innerColor", TypeColorI, Offset(mInnerColor, GuiRadarChartCtrlProfile), "Inner color");
-        addField("dataSetColor", TypeColorI, Offset(mDataSetColor, GuiRadarChartCtrlProfile), "Data set color");
         addField("outerWidth", TypeF32, Offset(mOuterWidth, GuiRadarChartCtrlProfile), "Outer width");
         addField("chartDivisor", TypeF32, Offset(mChartDivisor, GuiRadarChartCtrlProfile), "Chart divisor - used for scaling");
         addField("showValues", TypeBool, Offset(mShowValues, GuiRadarChartCtrlProfile), "Show values at each point of the data set.");
