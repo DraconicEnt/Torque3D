@@ -108,6 +108,9 @@ void GuiRadarChartCtrl::onRender(Point2I offset, const RectI &updateRect)
     
     // Render inner filler polygon
     GFXStateBlockDesc description;
+    description.setAlphaTest(true);
+    description.setBlend(true);
+
     Vector<Point3F> innerTriangles;
     constructPolygonTriangles(outerVertices, centerPoint, innerTriangles);
     GFX->getDrawUtil()->drawPolygonTexture(description,
