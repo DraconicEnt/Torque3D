@@ -31,51 +31,69 @@ ConsoleDocClass( GuiTypingTextCtrl,
    "@ingroup GuiCore\n"
 );
 
-GuiTypingTextCtrl::GuiTypingTextCtrl() : GuiTextCtrl()
+GuiTypingTextCtrl::GuiTypingTextCtrl() : GuiControl()
 {
-    mTypingSpeed = 0.05f;
-    mRenderedText = NULL;
+    mSourceText = StringTable->EmptyString();
     mRenderedTextLength = 0;
-    mRenderedTextProgress = 0.0f;
+    mLineIndex = 0;
+    mTextBlockIndex = 0;
+    mTextBlockProgress = 0.0f;
 }
 
 void GuiTypingTextCtrl::initPersistFields()
 {
-    addField("typingSpeed", TypeF32, Offset(mTypingSpeed, GuiTypingTextCtrl), "How quickly to type the string out in characters per 32ms..");
+    addProtectedField("text", TypeCaseString, Offset(mSourceText, GuiTypingTextCtrl), setText, getTextProperty,
+                      "The text to show on the control.");
 
     Parent::initPersistFields();
 }
 
-void GuiTypingTextCtrl::setText(const char *txt)
+void GuiTypingTextCtrl::setText(const char* newText)
 {
-    // Free existing text if present
-    if (mRenderedText)
+    mSourceLines.clear();
+    mRenderedLines.clear();
+
+    parseTextInput(newText, dStrlen(newText), mSourceLines);
+
+    // Enumerate lines
+    for (dsize_t lineIteration = 0; lineIteration < mSourceLines.size(); ++lineIteration)
     {
-        dFree(mRenderedText);
-        mRenderedText = NULL;
+        const Vector<TextBlockEntry>& currentSourceLine = *(mSourceLines.begin() + lineIteration);
+
+        Vector<TextBlockEntry> renderedLine;
+
+        // Enumerate blocks in the line
+        for (dsize_t blockIteration = 0; blockIteration < currentSourceLine.size(); ++blockIteration)
+        {
+            const TextBlockEntry& currentSourceBlock = *(currentSourceLine.begin() + blockIteration);
+            renderedLine.push_back(TextBlockEntry(currentSourceBlock.mTextLength + 1)); // Add NULL padding
+        }
+
+        mRenderedLines.push_back(renderedLine);
     }
 
-    mRenderedTextProgress = 0.0f;
-
-    if (txt)
-    {
-        mRenderedTextLength = dStrlen(txt);
-
-        mRenderedText = reinterpret_cast<char*>(dMalloc(sizeof(char) * mRenderedTextLength));
-        dMemset(mRenderedText, 0x00, sizeof(char) * mRenderedTextLength);
-    }
-
-    Parent::setText(txt);
+    // Set source text for script access
+    mSourceText = StringTable->insert(newText, true);
 }
 
 void GuiTypingTextCtrl::onRender(Point2I offset, const RectI &updateRect)
 {
     renderBorder(RectI(offset, getExtent()), mProfile);
 
-    if (mRenderedText)
+    // Enumerate lines
+    GFX->getDrawUtil()->setBitmapModulation(mProfile->mFontColor);
+    for (dsize_t lineIteration = 0; lineIteration < mSourceLines.size(); ++lineIteration)
     {
-        GFX->getDrawUtil()->setBitmapModulation(mProfile->mFontColor);
-        renderJustifiedText(offset, getExtent(), (char *) mRenderedText);
+        const Vector<TextBlockEntry>& currentSourceLine = *(mSourceLines.begin() + lineIteration);
+
+        // Enumerate blocks in the line
+        for (dsize_t blockIteration = 0; blockIteration < currentSourceLine.size(); ++blockIteration)
+        {
+            const TextBlockEntry& currentSourceBlock = *(currentSourceLine.begin() + blockIteration);
+
+            // FIXME: Draw per line
+            renderJustifiedText(offset, getExtent(), (char *) currentSourceBlock.mText);
+        }
     }
 
     //render the child controls
@@ -89,29 +107,66 @@ void GuiTypingTextCtrl::interpolateTick( F32 delta )
 
 void GuiTypingTextCtrl::processTick()
 {
-    if (mRenderedText)
-    {
-        mRenderedTextProgress += mTypingSpeed;
+   if (mLineIndex < mSourceLines.size())
+   {
+       const Vector<TextBlockEntry>& currentLine = *(mSourceLines.begin() + mLineIndex);
 
-        // Cap at input text length
-        if (mRenderedTextProgress >= mRenderedTextLength)
-        {
-            mRenderedTextProgress = mRenderedTextLength;
-        }
+       if (mTextBlockIndex < currentLine.size())
+       {
+           const TextBlockEntry& currentBlock = *(currentLine.begin() + mTextBlockIndex);
 
-        // Cap at max display length of the child class
-        if (mRenderedTextProgress >= MAX_STRING_LENGTH)
-        {
-            mRenderedTextProgress = MAX_STRING_LENGTH;
-        }
+           const dsize_t previousTextIndex = static_cast<dsize_t>(mTextBlockProgress);
+           mTextBlockProgress += currentBlock.mTypingSpeed;
+           const dsize_t nextTextIndex = static_cast<dsize_t>(mTextBlockProgress);
 
-        // Copy bytes over
-        const dsize_t nextIndex = static_cast<dsize_t>(mRenderedTextProgress);
-        dMemcpy(mRenderedText, mText, nextIndex * sizeof(char));
-    }
+           // Copy into render buffer
+           Vector<TextBlockEntry>& renderedLine = *(mRenderedLines.begin() + mLineIndex);
+           TextBlockEntry& renderedBlock = *(renderedLine.begin() + mTextBlockIndex);
+
+           dMemcpy(renderedBlock.mText + previousTextIndex, currentBlock.mText + previousTextIndex, nextTextIndex - previousTextIndex);
+       }
+       else
+       {
+           ++mLineIndex;
+           mTextBlockIndex = 0;
+           mTextBlockProgress = 0.0f;
+       }
+   }
 }
 
 void GuiTypingTextCtrl::advanceTime( F32 timeDelta )
 {
 
 }
+
+void GuiTypingTextCtrl::parseTextInput(const char* text, const dsize_t textLength, Vector<Vector<TextBlockEntry>>& out)
+{
+    Vector<TextBlockEntry> currentLine;
+
+    // Enumerate all lines
+    dsize_t currentLineStart = 0;
+    for (dsize_t iteration = 0; iteration < textLength; ++iteration)
+    {
+        // If we encounter a newline character, copy the buffer into a new entry
+        if (text[iteration] == '\n')
+        {
+            const char* copyTextPointer = text + currentLineStart;
+            currentLine.push_back(TextBlockEntry(copyTextPointer, iteration - currentLineStart));
+
+            out.push_back(currentLine);
+            currentLine = Vector<TextBlockEntry>();
+            currentLineStart = iteration;
+        }
+    }
+
+    // Copy remaining buffer into a new line
+    currentLine = Vector<TextBlockEntry>();
+    if (currentLineStart < textLength)
+    {
+        const char* copyTextPointer = text + currentLineStart;
+        currentLine.push_back(TextBlockEntry(copyTextPointer, textLength - currentLineStart));
+
+        out.push_back(currentLine);
+    }
+}
+

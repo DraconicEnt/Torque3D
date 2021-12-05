@@ -7,22 +7,88 @@
 #include "gui/core/guiTypes.h"
 #endif
 #ifndef _GUITEXTCTRL_H_
-#include "gui/controls/guiTextCtrl.h"
+#include "gui/core/guiControl.h"
 #endif
 #ifndef _ITICKABLE_H_
 #include "core/iTickable.h"
 #endif
 
-class GuiTypingTextCtrl : public GuiTextCtrl, public ITickable
+class GuiTypingTextCtrl : public GuiControl, public ITickable
 {
 private:
-   typedef GuiTextCtrl Parent;
+   typedef GuiControl Parent;
 
 protected:
-    char* mRenderedText;
-    F32 mRenderedTextProgress;
-    F32 mTypingSpeed;
+    /**
+     * @brief A struct representing a block of text to be drawn in the element.
+     */
+    struct TextBlockEntry
+    {
+        char* mText;
+        dsize_t mTextLength;
+        F32 mTypingSpeed;
+
+        /**
+         * @brief Constructor for copying source text data.
+         * @param source The source text to copy.
+         * @param sourceLength The length of the source text to copy.
+         */
+        TextBlockEntry(const char* source, const dsize_t sourceLength)
+        {
+            mTypingSpeed = 0.005f;
+            mTextLength = sourceLength;
+            mText = (char*)dMalloc(sizeof(char) * sourceLength);
+            dMemcpy(mText, source, sourceLength);
+        }
+
+        /**
+         * @brief Constructor for building a blank text block, used for
+         * assembling the render buffer.
+         * @param bufferSize The size of the buffer.
+         */
+        TextBlockEntry(const dsize_t bufferSize)
+        {
+            mTextLength = bufferSize;
+            mText = (char*)dMalloc(sizeof(char) * bufferSize);
+            dMemset(mText, 0x00, sizeof(char) * bufferSize);
+        }
+
+        TextBlockEntry()
+        {
+            mTextLength = 0;
+            mText = NULL;
+        }
+
+        ~TextBlockEntry()
+        {
+            if (mText)
+            {
+                dFree(mText);
+            }
+        }
+    };
+
+    //! The source text provided to the control. Primarily used for reading back the text.
+    StringTableEntry mSourceText;
+
+    //! Current text block progress.
+    F32 mTextBlockProgress;
+
+    //! Current text block index.
+    dsize_t mTextBlockIndex;
+
+    //! Current line index.
+    dsize_t mLineIndex;
+
     dsize_t mRenderedTextLength;
+
+    //! A vector of lines made up of text block entries. This is the source of the drawn data.
+    Vector<Vector<TextBlockEntry>> mSourceLines;
+
+    //! A vector of lines made up of text block entries. This is the rendered data per frame.
+    Vector<Vector<TextBlockEntry>> mRenderedLines;
+
+    void parseTextInput(const char* text, const dsize_t textLength, Vector<Vector<TextBlockEntry>>& out);
 
 public:
 
@@ -34,7 +100,8 @@ public:
    GuiTypingTextCtrl();
    static void initPersistFields();
 
-   virtual void setText(const char *txt = NULL);
+   virtual void setText(const char *newText);
+   const char* getText() { return mSourceText; }
 
    virtual void interpolateTick( F32 delta );
 
@@ -44,4 +111,16 @@ public:
 
    //rendering methods
    void onRender(Point2I offset, const RectI &updateRect);
+
+   // Text Property Accessors
+   static bool setText(void *object, const char *index, const char *data)
+   {
+       static_cast<GuiTypingTextCtrl*>(object)->setText(data);
+       return true;
+   }
+
+   static const char* getTextProperty(void* obj, const char* data)
+   {
+       return static_cast<GuiTypingTextCtrl*>(obj)->getText();
+   }
 };
