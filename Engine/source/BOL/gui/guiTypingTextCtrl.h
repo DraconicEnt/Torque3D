@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #ifndef _GFONT_H_
 #include "gfx/gFont.h"
 #endif
@@ -35,10 +37,18 @@ protected:
          */
         TextBlockEntry(const char* source, const dsize_t sourceLength)
         {
-            mTypingSpeed = 0.005f;
+            mTypingSpeed = 0.05f;
             mTextLength = sourceLength;
             mText = (char*)dMalloc(sizeof(char) * sourceLength);
             dMemcpy(mText, source, sourceLength);
+        }
+
+        TextBlockEntry(const TextBlockEntry& copied)
+        {
+           mTextLength = copied.mTextLength;
+           mTypingSpeed = copied.mTypingSpeed;
+           mText = (char*)dMalloc(sizeof(char) * copied.mTextLength);
+           dMemcpy(mText, copied.mText, mTextLength);
         }
 
         /**
@@ -49,6 +59,7 @@ protected:
         TextBlockEntry(const dsize_t bufferSize)
         {
             mTextLength = bufferSize;
+            mTypingSpeed = 0.05f;
             mText = (char*)dMalloc(sizeof(char) * bufferSize);
             dMemset(mText, 0x00, sizeof(char) * bufferSize);
         }
@@ -57,6 +68,7 @@ protected:
         {
             mTextLength = 0;
             mText = NULL;
+            mTypingSpeed = 0.05f;
         }
 
         ~TextBlockEntry()
@@ -64,6 +76,7 @@ protected:
             if (mText)
             {
                 dFree(mText);
+                mText = NULL;
             }
         }
     };
@@ -80,15 +93,13 @@ protected:
     //! Current line index.
     dsize_t mLineIndex;
 
-    dsize_t mRenderedTextLength;
-
     //! A vector of lines made up of text block entries. This is the source of the drawn data.
-    Vector<Vector<TextBlockEntry>> mSourceLines;
+    std::vector<std::vector<TextBlockEntry>> mSourceLines;
 
     //! A vector of lines made up of text block entries. This is the rendered data per frame.
-    Vector<Vector<TextBlockEntry>> mRenderedLines;
+    std::vector<std::vector<TextBlockEntry>> mRenderedLines;
 
-    void parseTextInput(const char* text, const dsize_t textLength, Vector<Vector<TextBlockEntry>>& out);
+    void parseTextInput(const char* text, const dsize_t textLength, std::vector<std::vector<TextBlockEntry>>& out);
 
 public:
 
