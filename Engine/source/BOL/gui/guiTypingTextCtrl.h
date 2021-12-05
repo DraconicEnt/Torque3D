@@ -81,6 +81,15 @@ protected:
         }
     };
 
+    /// @name Callbacks
+    /// @{
+
+    DECLARE_CALLBACK( void, onLineTyped, (U32 lineNumber) );
+    DECLARE_CALLBACK( void, onCharactersTyped, (U32 lineNumber, U32 characterNumber) );
+    DECLARE_CALLBACK( void, onTextTyped, () );
+
+    /// @}
+
     //! The source text provided to the control. Primarily used for reading back the text.
     StringTableEntry mSourceText;
 
@@ -98,6 +107,9 @@ protected:
 
     //! A vector of lines made up of text block entries. This is the rendered data per frame.
     std::vector<std::vector<TextBlockEntry>> mRenderedLines;
+
+    //! Whether or not the control should auto resize as text is inserted into it.
+    bool mAutoResize;
 
     void parseTextInput(const char* text, const dsize_t textLength, std::vector<std::vector<TextBlockEntry>>& out);
 

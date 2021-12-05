@@ -31,10 +31,21 @@ ConsoleDocClass( GuiTypingTextCtrl,
    "@ingroup GuiCore\n"
 );
 
+IMPLEMENT_CALLBACK( GuiTypingTextCtrl, onLineTyped, void, (U32 lineNumber), ( lineNumber ),
+                    "Called when per-modifier functionality is enabled and the user clicks on the button without any modifier pressed.\n"
+                    "@ref guibitmapbutton_modifiers" );
+IMPLEMENT_CALLBACK( GuiTypingTextCtrl, onCharactersTyped, void, (U32 lineNumber, U32 characterNumber), ( lineNumber, characterNumber ),
+                    "Called when per-modifier functionality is enabled and the user clicks on the button without any modifier pressed.\n"
+                    "@ref guibitmapbutton_modifiers" );
+IMPLEMENT_CALLBACK( GuiTypingTextCtrl, onTextTyped, void, (), (),
+                    "Called when per-modifier functionality is enabled and the user clicks on the button without any modifier pressed.\n"
+                    "@ref guibitmapbutton_modifiers" );
+
 GuiTypingTextCtrl::GuiTypingTextCtrl() : GuiControl()
 {
     mSourceText = StringTable->EmptyString();
     mLineIndex = 0;
+    mAutoResize = false;
     mTextBlockIndex = 0;
     mTextBlockProgress = 0.0f;
 }
@@ -43,6 +54,7 @@ void GuiTypingTextCtrl::initPersistFields()
 {
     addProtectedField("text", TypeCaseString, Offset(mSourceText, GuiTypingTextCtrl), setText, getTextProperty,
                       "The text to show on the control.");
+    addField("autoResize", TypeBool, Offset(mAutoResize, GuiTypingTextCtrl), "Whether or not the control should auto resize.");
 
     Parent::initPersistFields();
 }
@@ -82,9 +94,12 @@ void GuiTypingTextCtrl::setText(const char* newText)
 
 void GuiTypingTextCtrl::onRender(Point2I offset, const RectI &updateRect)
 {
+    Parent::onRender(offset, updateRect);
+
     renderBorder(RectI(offset, getExtent()), mProfile);
 
     const U32 textHeight = mProfile->mFont->getHeight();
+    U32 maxWidth = 0;
 
     // Enumerate lines
     GFX->getDrawUtil()->setBitmapModulation(mProfile->mFontColor);
@@ -98,9 +113,19 @@ void GuiTypingTextCtrl::onRender(Point2I offset, const RectI &updateRect)
         for (dsize_t blockIteration = 0; blockIteration < currentRenderedLine.size(); ++blockIteration)
         {
            const TextBlockEntry& currentRenderedBlock = currentRenderedLine[blockIteration];
-           
+
+           const U32 textWidth = mProfile->mFont->getStrWidth(currentRenderedBlock.mText);
+           maxWidth = textWidth > maxWidth ? textWidth : maxWidth;
+
            GFX->getDrawUtil()->drawText(mProfile->mFont, lineOffset, (char*)currentRenderedBlock.mText, mProfile->mFontColors);
         }
+    }
+
+    // Set new extents
+    if (mAutoResize)
+    {
+        const Point2I newExtent = Point2I(maxWidth, textHeight * mRenderedLines.size());
+        setExtent(newExtent);
     }
 
     //render the child controls
@@ -135,6 +160,11 @@ void GuiTypingTextCtrl::processTick()
               renderedBlock.mText[iteration] = currentBlock.mText[iteration];
            }
 
+           if (nextTextIndex != previousTextIndex)
+           {
+               onCharactersTyped_callback(mLineIndex, nextTextIndex);
+           }
+
            if (nextTextIndex >= currentBlock.mTextLength)
            {
               ++mTextBlockIndex;
@@ -143,9 +173,16 @@ void GuiTypingTextCtrl::processTick()
        }
        else
        {
+           onLineTyped_callback(mLineIndex);
+
            ++mLineIndex;
            mTextBlockIndex = 0;
            mTextBlockProgress = 0.0f;
+
+           if (mLineIndex >= mSourceLines.size())
+           {
+               onTextTyped_callback();
+           }
        }
    }
 }
