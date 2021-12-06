@@ -12,15 +12,13 @@
 IMPLEMENT_CONOBJECT( GuiTypingTextCtrl );
 
 ConsoleDocClass( GuiTypingTextCtrl,
-   "@brief GUI control object this displays a single line of text, without TorqueML. It will then type the text"
-   "out at the specified speed.\n\n"
+   "@brief Gui control that 'types' out a set of text, primarily for use in eg. character dialog.\n\n"
 
    "@tsexample\n"
    "  new GuiTypingTextCtrl()\n"
    "  {\n"
    "     text = \"Hello World\";\n"
    "     textID = \"\"STR_HELLO\"\";\n"
-   "     maxlength = \"1024\";\n"
    "     typingSpeed = 0.005; // Characters per 32ms\n"
    "      //Properties not specific to this control have been omitted from this example.\n"
    "  };\n"
@@ -32,21 +30,24 @@ ConsoleDocClass( GuiTypingTextCtrl,
 );
 
 IMPLEMENT_CALLBACK( GuiTypingTextCtrl, onLineTyped, void, (U32 lineNumber), ( lineNumber ),
-                    "Called when per-modifier functionality is enabled and the user clicks on the button without any modifier pressed.\n"
-                    "@ref guibitmapbutton_modifiers" );
-IMPLEMENT_CALLBACK( GuiTypingTextCtrl, onCharactersTyped, void, (U32 lineNumber, U32 characterNumber), ( lineNumber, characterNumber ),
-                    "Called when per-modifier functionality is enabled and the user clicks on the button without any modifier pressed.\n"
-                    "@ref guibitmapbutton_modifiers" );
+                    "Called when a line is fully typed out." );
+IMPLEMENT_CALLBACK( GuiTypingTextCtrl, onCharactersTyped, void, (U32 lineNumber, U32 startCharacterNumber, U32 endCharacterNumber ), ( lineNumber, startCharacterNumber, endCharacterNumber ),
+                    "Called when a set of characters is typed out. May represent multiple characters being typed depending on typing speed." );
 IMPLEMENT_CALLBACK( GuiTypingTextCtrl, onTextTyped, void, (), (),
-                    "Called when per-modifier functionality is enabled and the user clicks on the button without any modifier pressed.\n"
-                    "@ref guibitmapbutton_modifiers" );
+                    "Called when the entirety of the text is fully typed out." );
+IMPLEMENT_CALLBACK( GuiTypingTextCtrl, onScrollBegin, void, (U32 lineNumber), (lineNumber),
+                    "Called when the control begins automatically scrolling." );
 
 GuiTypingTextCtrl::GuiTypingTextCtrl() : GuiControl()
 {
     mSourceText = StringTable->EmptyString();
     mLineIndex = 0;
     mAutoResize = false;
+    mScrollSpeed = 0.0f;
+    mCurrentScroll = 0.0f;
     mTextBlockIndex = 0;
+    mScrolling = false;
+    mScrollTrigger = 0.9f;
     mTextBlockProgress = 0.0f;
 }
 
@@ -55,7 +56,9 @@ void GuiTypingTextCtrl::initPersistFields()
     addProtectedField("text", TypeCaseString, Offset(mSourceText, GuiTypingTextCtrl), setText, getTextProperty,
                       "The text to show on the control.");
     addField("autoResize", TypeBool, Offset(mAutoResize, GuiTypingTextCtrl), "Whether or not the control should auto resize.");
-
+    addField("scrollSpeed", TypeF32, Offset(mScrollSpeed, GuiTypingTextCtrl), "The vertical scroll speed when the text is typing out.");
+    addField("scrollTrigger", TypeF32, Offset(mScrollTrigger, GuiTypingTextCtrl), "The scroll trigger - the percentage of the vertical size at which scrolling should begin.");
+    addField("scrolling", TypeBool, Offset(mScrolling, GuiTypingTextCtrl), "Whether or not the text should be scrolling.");
     Parent::initPersistFields();
 }
 
@@ -89,6 +92,8 @@ void GuiTypingTextCtrl::setText(const char* newText)
     // Reset draw state
     mTextBlockIndex = 0;
     mLineIndex = 0;
+    mScrolling = false;
+    mCurrentScroll = 0.0f;
     mTextBlockProgress = 0.0f;
 }
 
@@ -107,7 +112,7 @@ void GuiTypingTextCtrl::onRender(Point2I offset, const RectI &updateRect)
     {
         const std::vector<TextBlockEntry>& currentRenderedLine = mRenderedLines[lineIteration];
 
-        const Point2I lineOffset = offset + Point2I(0, textHeight * lineIteration);
+        const Point2I lineOffset = offset + Point2I(0, (textHeight * lineIteration) - mCurrentScroll);
 
         // Enumerate blocks in the line
         for (dsize_t blockIteration = 0; blockIteration < currentRenderedLine.size(); ++blockIteration)
@@ -128,7 +133,7 @@ void GuiTypingTextCtrl::onRender(Point2I offset, const RectI &updateRect)
         setExtent(newExtent);
     }
 
-    //render the child controls
+    // render the child controls
     renderChildControls(offset, updateRect);
 }
 
@@ -139,6 +144,8 @@ void GuiTypingTextCtrl::interpolateTick( F32 delta )
 
 void GuiTypingTextCtrl::processTick()
 {
+   const U32 textHeight = mProfile->mFont->getHeight();
+
    if (mLineIndex < mSourceLines.size())
    {
        const std::vector<TextBlockEntry>& currentLine = mSourceLines[mLineIndex];
@@ -162,7 +169,14 @@ void GuiTypingTextCtrl::processTick()
 
            if (nextTextIndex != previousTextIndex)
            {
-               onCharactersTyped_callback(mLineIndex, nextTextIndex);
+               const F32 percentageOccupied = static_cast<F32>(textHeight * mLineIndex) / static_cast<F32>(getExtent().y);
+               if (percentageOccupied >= mScrollTrigger)
+               {
+                   mScrolling = true;
+                   onScrollBegin_callback(mLineIndex);
+               }
+
+               onCharactersTyped_callback(mLineIndex, previousTextIndex, nextTextIndex);
            }
 
            if (nextTextIndex >= currentBlock.mTextLength)
@@ -184,6 +198,11 @@ void GuiTypingTextCtrl::processTick()
                onTextTyped_callback();
            }
        }
+   }
+
+   if (mScrolling)
+   {
+       mCurrentScroll += mScrollSpeed;
    }
 }
 

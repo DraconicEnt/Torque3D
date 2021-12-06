@@ -85,8 +85,9 @@ protected:
     /// @{
 
     DECLARE_CALLBACK( void, onLineTyped, (U32 lineNumber) );
-    DECLARE_CALLBACK( void, onCharactersTyped, (U32 lineNumber, U32 characterNumber) );
+    DECLARE_CALLBACK( void, onCharactersTyped, (U32 lineNumber, U32 startCharacterNumber, U32 endCharacterNumber) );
     DECLARE_CALLBACK( void, onTextTyped, () );
+    DECLARE_CALLBACK( void, onScrollBegin, (U32 lineNumber) );
 
     /// @}
 
@@ -110,6 +111,18 @@ protected:
 
     //! Whether or not the control should auto resize as text is inserted into it.
     bool mAutoResize;
+
+    //! The scrolling speed of the text.
+    F32 mScrollSpeed;
+
+    //! The current scroll value for the text.
+    F32 mCurrentScroll;
+
+    //! Whether or not the text should be scrolling.
+    bool mScrolling;
+
+    //! The scroll trigger - the percentage of the height of the text at which text should begin scrolling. Set to > 1.0f to disable.
+    F32 mScrollTrigger;
 
     void parseTextInput(const char* text, const dsize_t textLength, std::vector<std::vector<TextBlockEntry>>& out);
 
