@@ -219,8 +219,6 @@ VehicleData::VehicleData()
    collDamageThresholdVel = 20;
    collDamageMultiplier = 0.05f;
    enablePhysicsRep = true;
-
-   INIT_ASSET(CockpitShape);
 }
 
 
@@ -389,8 +387,6 @@ void VehicleData::packData(BitStream* stream)
 
    stream->write(collDamageThresholdVel);
    stream->write(collDamageMultiplier);
-
-   PACKDATA_ASSET(CockpitShape);
 }
 
 void VehicleData::unpackData(BitStream* stream)
@@ -487,10 +483,58 @@ void VehicleData::unpackData(BitStream* stream)
 
    stream->read(&collDamageThresholdVel);
    stream->read(&collDamageMultiplier);
-
-   UNPACKDATA_ASSET(CockpitShape);
 }
 
+
+//----------------------------------------------------------------------------
+
+void Vehicle::renderMountedImage(U32 imageSlot, TSRenderState& rstate, SceneRenderState* state)
+{
+   // Perform normal render logic for everything not image 0
+   if (imageSlot != 0)
+   {
+      Parent::renderMountedImage(imageSlot, rstate, state);
+      return;
+   }
+
+   // Don't render at all if we're not first person
+   if (state->isShadowPass() || !isFirstPerson())
+   {
+      return;
+   }
+
+   GFX->pushWorldMatrix();
+
+   MatrixF world;
+
+   MountedImage& image = mMountedImageList[imageSlot];
+   ShapeBaseImageData& data = *image.dataBlock;
+   U32 imageShapeIndex = getImageShapeIndex(image);
+
+   if (data.useEyeNode && data.eyeMountNode[imageShapeIndex] != -1)
+   {
+      MatrixF nmat;
+      getRenderEyeBaseTransform(&nmat, mDataBlock->mountedImagesBank);
+      MatrixF offsetMat = image.shapeInstance[imageShapeIndex]->mNodeTransforms[data.eyeMountNode[imageShapeIndex]];
+      offsetMat.affineInverse();
+      world.mul(nmat, offsetMat);
+   }
+   else
+   {
+      MatrixF nmat;
+      getRenderEyeBaseTransform(&nmat, mDataBlock->mountedImagesBank);
+      world.mul(nmat, data.eyeOffset);
+   }
+
+   // Add DB defined offsets
+   world *= data.mountOffset;
+   GFX->setWorldMatrix(world);
+
+   image.shapeInstance[imageShapeIndex]->animate();
+   image.shapeInstance[imageShapeIndex]->render(rstate);
+
+   GFX->popWorldMatrix();
+}
 
 //----------------------------------------------------------------------------
 
@@ -701,8 +745,6 @@ Vehicle::Vehicle()
    mWorkingQueryBoxCountDown = sWorkingQueryBoxStaleThreshold;
 
    mPhysicsRep = NULL;
-
-   mCockpitShapeInstance = NULL;
 }
 
 U32 Vehicle::getCollisionMask()
@@ -902,15 +944,6 @@ bool Vehicle::onNewDataBlock(GameBaseData* dptr,bool reload)
 
       if ( mDataBlock->getVehicleWaterSounds(VehicleData::Wake) != NULL )
          mWakeSound = SFX->createSource( mDataBlock->getVehicleWaterSoundsProfile(VehicleData::Wake), &getTransform() );
-
-      // Instantiate cockpit shape
-      // FIXME: Destruct old instance?
-      if (mDataBlock->mCockpitShape)
-      {
-          mCockpitShapeInstance = new TSShapeInstance(mDataBlock->mCockpitShape, isClientObject());
-
-          mCockpitShapeInstance->cloneMaterialList();
-      }
    }
 
    return true;
@@ -1233,25 +1266,6 @@ void Vehicle::findCallback(SceneObject* obj,void *key)
          vehicle->queueCollision(item,vehicle->getVelocity() - item->getVelocity());
    }
 }
-
-//----------------------------------------------------------------------------
-
-void Vehicle::renderMountedImage( U32 imageSlot, TSRenderState &rstate, SceneRenderState *state )
-{
-    Parent::renderMountedImage(imageSlot, rstate, state);
-
-    GFX->pushWorldMatrix();
-
-    // Render the first person mount image shape?
-    if (!state->isShadowPass() && isFirstPerson() && mCockpitShapeInstance)
-    {
-        mCockpitShapeInstance->animate();
-        mCockpitShapeInstance->render( rstate );
-    }
-    
-    GFX->popWorldMatrix();
-}
-
 
 //----------------------------------------------------------------------------
 

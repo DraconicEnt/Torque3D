@@ -126,12 +126,6 @@ struct VehicleData : public RigidShapeData
 
    bool enablePhysicsRep;
 
-   // BOL
-   DECLARE_SHAPEASSET(VehicleData, CockpitShape, onCockpitShapeChanged);
-   DECLARE_ASSET_SETGET(VehicleData, CockpitShape);
-
-   void onCockpitShapeChanged() {}
-
    //
    VehicleData();
    bool preload(bool server, String &errorStr);
