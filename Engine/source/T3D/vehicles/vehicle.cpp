@@ -219,6 +219,8 @@ VehicleData::VehicleData()
    collDamageThresholdVel = 20;
    collDamageMultiplier = 0.05f;
    enablePhysicsRep = true;
+
+   INIT_ASSET(CockpitShape);
 }
 
 
@@ -387,6 +389,8 @@ void VehicleData::packData(BitStream* stream)
 
    stream->write(collDamageThresholdVel);
    stream->write(collDamageMultiplier);
+
+   PACKDATA_ASSET(CockpitShape);
 }
 
 void VehicleData::unpackData(BitStream* stream)
@@ -483,6 +487,8 @@ void VehicleData::unpackData(BitStream* stream)
 
    stream->read(&collDamageThresholdVel);
    stream->read(&collDamageMultiplier);
+
+   UNPACKDATA_ASSET(CockpitShape);
 }
 
 
@@ -695,6 +701,8 @@ Vehicle::Vehicle()
    mWorkingQueryBoxCountDown = sWorkingQueryBoxStaleThreshold;
 
    mPhysicsRep = NULL;
+
+   mCockpitShapeInstance = NULL;
 }
 
 U32 Vehicle::getCollisionMask()
@@ -894,6 +902,15 @@ bool Vehicle::onNewDataBlock(GameBaseData* dptr,bool reload)
 
       if ( mDataBlock->getVehicleWaterSounds(VehicleData::Wake) != NULL )
          mWakeSound = SFX->createSource( mDataBlock->getVehicleWaterSoundsProfile(VehicleData::Wake), &getTransform() );
+
+      // Instantiate cockpit shape
+      // FIXME: Destruct old instance?
+      if (mDataBlock->mCockpitShape)
+      {
+          mCockpitShapeInstance = new TSShapeInstance(mDataBlock->mCockpitShape, isClientObject());
+
+          mCockpitShapeInstance->cloneMaterialList();
+      }
    }
 
    return true;
@@ -1215,6 +1232,24 @@ void Vehicle::findCallback(SceneObject* obj,void *key)
       if (vehicle != item->getCollisionObject())
          vehicle->queueCollision(item,vehicle->getVelocity() - item->getVelocity());
    }
+}
+
+//----------------------------------------------------------------------------
+
+void Vehicle::renderMountedImage( U32 imageSlot, TSRenderState &rstate, SceneRenderState *state )
+{
+    Parent::renderMountedImage(imageSlot, rstate, state);
+
+    GFX->pushWorldMatrix();
+
+    // Render the first person mount image shape?
+    if (!state->isShadowPass() && isFirstPerson() && mCockpitShapeInstance)
+    {
+        mCockpitShapeInstance->animate();
+        mCockpitShapeInstance->render( rstate );
+    }
+    
+    GFX->popWorldMatrix();
 }
 
 

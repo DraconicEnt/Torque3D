@@ -126,6 +126,12 @@ struct VehicleData : public RigidShapeData
 
    bool enablePhysicsRep;
 
+   // BOL
+   DECLARE_SHAPEASSET(VehicleData, CockpitShape, onCockpitShapeChanged);
+   DECLARE_ASSET_SETGET(VehicleData, CockpitShape);
+
+   void onCockpitShapeChanged() {}
+
    //
    VehicleData();
    bool preload(bool server, String &errorStr);
@@ -149,7 +155,10 @@ class Vehicle : public RigidShape
    VehicleData* mDataBlock;
    SFXSource* mWakeSound;
 
-   // Control
+   // BOL
+   TSShapeInstance*  mCockpitShapeInstance;
+
+    // Control
    Point2F mSteering;
    F32 mThrottle;
    bool mJetting;
@@ -186,6 +195,9 @@ class Vehicle : public RigidShape
    /// ObjectRenderInst delegate hooked up in prepBatchRender 
    /// if GameBase::gShowBoundingBox is true.
    void _renderMuzzleVector( ObjectRenderInst *ri, SceneRenderState *state, BaseMatInstance *overrideMat );
+
+   // BOL
+   virtual void renderMountedImage( U32 imageSlot, TSRenderState &rstate, SceneRenderState *state );
 
 public:
    // Test code...
