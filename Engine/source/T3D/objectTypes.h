@@ -172,6 +172,8 @@ enum SceneObjectTypes
    TurretObjectType = BIT(29),
 
    /// @}
+
+   TerrainDeformerObjectType = BIT(30),
 };
 
 enum SceneObjectTypeMasks : U32
