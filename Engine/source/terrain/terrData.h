@@ -55,7 +55,7 @@
 #endif 
 #ifndef TERRAINASSET_H
 #include "T3D/assets/TerrainAsset.h"
-#endif 
+#endif
 
 class GBitmap;
 class TerrainBlock;
@@ -337,6 +337,23 @@ public:
    GFXTextureArrayHandle getOrmTextureArray() const { return mOrmTextureArray; }
 
    //BaseMatInstance* getMaterialInst( U32 x, U32 y );
+   bool isPointInTerrain( const Point2I& gPoint);
+
+    // Converts any point that is off of the main tile to its equivalent on the main tile
+    // Returns true if the point was already on the main tile
+   bool gridToCenter(const Point2I & gPos, Point2I & cPos) const;
+
+    // Converts a world position to a grid point
+   bool worldToGrid(const Point3F & wPos, Point2I & gPoint);
+
+   // Converts a GridPoint to a world position
+   bool gridToWorld(const Point2I & gPoint, Point3F & wPos);
+
+   // Returns true if the grid position is on the main tile
+   bool isMainTile(const Point2I & gPoint) const;
+
+   // Returns the height at a grid point
+   F32 getGridHeight(const Point2I & gPoint);
 
    void setHeight( const Point2I &pos, F32 height );
    F32 getHeight( const Point2I &pos );

@@ -36,15 +36,17 @@
 #include "util/noise2d.h"
 #endif
 
+#include "terrain/terrDeformContext.h"
+
 class TerrainAction
 {
    protected:
-      TerrainEditor *         mTerrainEditor;
+      TerrainDeformContext *         mContext;
 
    public:
 
       virtual ~TerrainAction(){};
-      TerrainAction(TerrainEditor * editor) : mTerrainEditor(editor){}
+      TerrainAction(TerrainDeformContext* context) : mContext(context){}
 
       virtual StringTableEntry getName() = 0;
 
@@ -65,7 +67,7 @@ class TerrainAction
 class SelectAction : public TerrainAction
 {
    public:
-      SelectAction(TerrainEditor * editor) : TerrainAction(editor){};
+      SelectAction(TerrainDeformContext * context) : TerrainAction(context){};
       StringTableEntry getName(){return("select");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -74,7 +76,7 @@ class SelectAction : public TerrainAction
 class DeselectAction : public TerrainAction
 {
    public:
-      DeselectAction(TerrainEditor * editor) : TerrainAction(editor){};
+      DeselectAction(TerrainDeformContext * context) : TerrainAction(context){};
       StringTableEntry getName(){return("deselect");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -83,18 +85,18 @@ class DeselectAction : public TerrainAction
 class ClearAction : public TerrainAction
 {
    public:
-      ClearAction(TerrainEditor * editor) : TerrainAction(editor){};
+      ClearAction(TerrainDeformContext * context) : TerrainAction(context){};
       StringTableEntry getName(){return("clear");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type) {};
-      bool useMouseBrush() { mTerrainEditor->getCurrentSel()->reset(); return true; }
+      bool useMouseBrush() { mContext->mEditor->getCurrentSel()->reset(); return true; }
 };
 
 
 class SoftSelectAction : public TerrainAction
 {
    public:
-      SoftSelectAction(TerrainEditor * editor) : TerrainAction(editor){};
+      SoftSelectAction(TerrainDeformContext * context) : TerrainAction(context){};
       StringTableEntry getName(){return("softSelect");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -107,7 +109,7 @@ class SoftSelectAction : public TerrainAction
 class OutlineSelectAction : public TerrainAction
 {
    public:
-      OutlineSelectAction(TerrainEditor * editor) : TerrainAction(editor){};
+      OutlineSelectAction(TerrainDeformContext * context) : TerrainAction(context){};
       StringTableEntry getName(){return("outlineSelect");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -123,7 +125,7 @@ class OutlineSelectAction : public TerrainAction
 class PaintMaterialAction : public TerrainAction
 {
    public:
-      PaintMaterialAction(TerrainEditor * editor) : TerrainAction(editor){}
+      PaintMaterialAction(TerrainDeformContext * context) : TerrainAction(context){}
       StringTableEntry getName(){return("paintMaterial");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -134,7 +136,7 @@ class PaintMaterialAction : public TerrainAction
 class ClearMaterialsAction : public TerrainAction
 {
 public:
-   ClearMaterialsAction(TerrainEditor * editor) : TerrainAction(editor){}
+   ClearMaterialsAction(TerrainDeformContext * context) : TerrainAction(context){}
    StringTableEntry getName(){return("clearMaterials");}
 
    void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -145,7 +147,7 @@ public:
 class RaiseHeightAction : public TerrainAction
 {
    public:
-      RaiseHeightAction(TerrainEditor * editor) : TerrainAction(editor){}
+      RaiseHeightAction(TerrainDeformContext * context) : TerrainAction(context){}
       StringTableEntry getName(){return("raiseHeight");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -156,7 +158,7 @@ class RaiseHeightAction : public TerrainAction
 class LowerHeightAction : public TerrainAction
 {
    public:
-      LowerHeightAction(TerrainEditor * editor) : TerrainAction(editor){}
+      LowerHeightAction(TerrainDeformContext * context) : TerrainAction(context){}
       StringTableEntry getName(){return("lowerHeight");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -167,7 +169,7 @@ class LowerHeightAction : public TerrainAction
 class SetHeightAction : public TerrainAction
 {
    public:
-      SetHeightAction(TerrainEditor * editor) : TerrainAction(editor){}
+      SetHeightAction(TerrainDeformContext * context) : TerrainAction(context){}
       StringTableEntry getName(){return("setHeight");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -178,7 +180,7 @@ class SetHeightAction : public TerrainAction
 class SetEmptyAction : public TerrainAction
 {
    public:
-      SetEmptyAction(TerrainEditor * editor) : TerrainAction(editor){}
+      SetEmptyAction(TerrainDeformContext * context) : TerrainAction(context){}
       StringTableEntry getName(){return("setEmpty");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -189,7 +191,7 @@ class SetEmptyAction : public TerrainAction
 class ClearEmptyAction : public TerrainAction
 {
    public:
-      ClearEmptyAction(TerrainEditor * editor) : TerrainAction(editor){}
+      ClearEmptyAction(TerrainDeformContext * context) : TerrainAction(context){}
       StringTableEntry getName(){return("clearEmpty");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -200,7 +202,7 @@ class ClearEmptyAction : public TerrainAction
 class ScaleHeightAction : public TerrainAction
 {
    public:
-      ScaleHeightAction(TerrainEditor * editor) : TerrainAction(editor){}
+      ScaleHeightAction(TerrainDeformContext * context) : TerrainAction(context){}
       StringTableEntry getName(){return("scaleHeight");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -211,7 +213,7 @@ class ScaleHeightAction : public TerrainAction
 class BrushAdjustHeightAction : public TerrainAction
 {
    public:
-      BrushAdjustHeightAction(TerrainEditor* editor) : TerrainAction(editor) { mPreviousZ = 0.0f; }
+      BrushAdjustHeightAction(TerrainDeformContext * context) : TerrainAction(context) { mPreviousZ = 0.0f; }
       StringTableEntry getName(){return("brushAdjustHeight");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -225,7 +227,7 @@ class BrushAdjustHeightAction : public TerrainAction
 class AdjustHeightAction : public BrushAdjustHeightAction
 {
    public:
-      AdjustHeightAction(TerrainEditor * editor);
+      AdjustHeightAction(TerrainDeformContext * context);
       StringTableEntry getName(){return("adjustHeight");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -243,7 +245,7 @@ class AdjustHeightAction : public BrushAdjustHeightAction
 class FlattenHeightAction : public TerrainAction
 {
    public:
-      FlattenHeightAction(TerrainEditor * editor) : TerrainAction(editor){}
+      FlattenHeightAction(TerrainDeformContext * context) : TerrainAction(context){}
       StringTableEntry getName(){return("flattenHeight");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -252,7 +254,7 @@ class FlattenHeightAction : public TerrainAction
 class SmoothHeightAction : public TerrainAction
 {
    public:
-      SmoothHeightAction(TerrainEditor * editor) : TerrainAction(editor){}
+      SmoothHeightAction(TerrainDeformContext * context) : TerrainAction(context){}
       StringTableEntry getName(){return("smoothHeight");}
 
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);
@@ -261,7 +263,7 @@ class SmoothHeightAction : public TerrainAction
 class SmoothSlopeAction : public TerrainAction  
 {  
    public:  
-      SmoothSlopeAction(TerrainEditor * editor) : TerrainAction(editor){}  
+      SmoothSlopeAction(TerrainDeformContext * context) : TerrainAction(context){}
       StringTableEntry getName(){return("smoothSlope");}  
   
       void process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type);  
@@ -271,8 +273,8 @@ class PaintNoiseAction : public TerrainAction
 {
    public:
 
-      PaintNoiseAction( TerrainEditor *editor ) 
-         :  TerrainAction( editor ),
+      PaintNoiseAction( TerrainDeformContext * context )
+         :  TerrainAction( context ),
             mNoiseSize( 256 )
       {
          mNoise.setSeed( 5342219 );

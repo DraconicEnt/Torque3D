@@ -33,154 +33,8 @@
 #include "util/undo.h"
 #endif
 
-
-
-// Each 2D grid position must be associated with a terrainBlock
-struct GridPoint
-{
-   Point2I        gridPos;
-   TerrainBlock*  terrainBlock;
-
-   GridPoint() { gridPos.set(0, 0); terrainBlock = NULL; };
-};
-
-class GridInfo
-{
-public:
-
-   GridPoint                  mGridPoint;
-   U8                         mMaterial;
-   F32                        mHeight;
-   F32                        mWeight;
-   F32                        mStartHeight;
-
-   bool                       mPrimarySelect;
-   bool                       mMaterialChanged;
-
-   // hash table
-   S32                        mNext;
-   S32                        mPrev;
-};
-
-
-class Selection : public Vector<GridInfo>
-{
-private:
-
-   StringTableEntry     mName;
-   BitSet32             mUndoFlags;
-
-   // hash table
-   S32 lookup(const Point2I & pos);
-   void insert(GridInfo info);
-   U32 getHashIndex(const Point2I & pos);
-   bool validate();
-
-   Vector<S32>          mHashLists;
-   U32                  mHashListSize;
-
-public:
-
-   Selection();
-   virtual ~Selection();
-
-   void reset();
-
-   /// add unique grid info into the selection - test uniqueness by grid position
-   bool add(const GridInfo &info);
-   bool getInfo(Point2I pos, GridInfo & info);
-   bool setInfo(GridInfo & info);
-   bool remove(const GridInfo &info);
-   void setName(StringTableEntry name);
-   StringTableEntry getName(){return(mName);}
-   F32 getAvgHeight();
-   F32 getMinHeight();
-   F32 getMaxHeight();
-};
-
-
-class TerrainEditor;
-
-class Brush : public Selection
-{
-protected:
-
-   TerrainEditor *   mTerrainEditor;
-   Point2I           mSize;
-   GridPoint         mGridPoint;         
-   Vector<S32>       mRenderList;
-
-public:
-
-   enum { MaxBrushDim = 256 };
-
-   Brush(TerrainEditor * editor);
-   virtual ~Brush(){};
-
-   virtual const char *getType() const = 0;
-
-   // Brush appears to intentionally bypass Selection's hash table, so we
-   // override validate() here.
-   bool validate() { return true; }
-   void setPosition(const Point3F & pos);
-   void setPosition(const Point2I & pos);
-   const Point2I & getPosition();
-   const GridPoint & getGridPoint();
-   void setTerrain(TerrainBlock* terrain) { mGridPoint.terrainBlock = terrain; };
-   Point2I getSize() const {return(mSize);}
-   virtual void setSize(const Point2I & size){mSize = size;}
-
-   void update();
-   void render();            
-
-   virtual void rebuild() = 0;            
-   virtual void _renderOutline() = 0;      
-};
-
-class BoxBrush : public Brush
-{
-public:
-
-   BoxBrush(TerrainEditor * editor) : Brush(editor){}
-   
-   const char *getType() const { return "box"; }
-   void rebuild();
-
-protected:
-
-   void _renderOutline();
-};
-
-class EllipseBrush : public Brush
-{
-public:
-
-   EllipseBrush(TerrainEditor * editor) : Brush(editor){}
-   
-   const char *getType() const { return "ellipse"; }
-   void rebuild();
-
-protected:
-
-   void _renderOutline();
-};
-
-class SelectionBrush : public Brush
-{
-public:
-
-   SelectionBrush(TerrainEditor * editor);
-
-   const char *getType() const { return "selection"; }
-   void rebuild();
-   void render(Vector<GFXVertexPCT> & vertexBuffer, S32 & verts, S32 & elems, S32 & prims, const LinearColorF & inColorFull, const LinearColorF & inColorNone, const LinearColorF & outColorFull, const LinearColorF & outColorNone) const;
-   void setSize(const Point2I &){}
-
-protected:
-
-   void _renderOutline() {}
-};
-
+#include "terrain/terrBrush.h"
+#include "terrain/terrDeformContext.h"
 
 class TerrainAction;
 
@@ -188,7 +42,10 @@ class TerrainEditor : public EditTSCtrl
 {
 	// XA: This methods where added to replace the friend consoleMethods.
 	public:
-		void attachTerrain(TerrainBlock *terrBlock);
+      //! The deformation context used by this editor.
+      TerrainDeformContext* mDeformContext;
+
+      void attachTerrain(TerrainBlock *terrBlock);
       void detachTerrain(TerrainBlock *terrBlock);
 		
       S32 getTerrainBlockCount() {return mTerrainBlocks.size();}
@@ -219,12 +76,10 @@ class TerrainEditor : public EditTSCtrl
 		
       TerrainBlock* getActiveTerrain() { return mActiveTerrain; };
 
-      void scheduleGridUpdate() { mNeedsGridUpdate = true; }
-      void scheduleMaterialUpdate() { mNeedsMaterialUpdate = true; }
       void setGridUpdateMinMax() 
-      { 
-         mGridUpdateMax.set( S32_MAX, S32_MAX );
-         mGridUpdateMin.set( 0, 0 );
+      {
+         mDeformContext->mGridUpdateMax.set( S32_MAX, S32_MAX );
+         mDeformContext->mGridUpdateMin.set( 0, 0 );
       }
       
       void submitMaterialUndo( String actionName );
@@ -240,17 +95,8 @@ class TerrainEditor : public EditTSCtrl
 
       // A list of all of the TerrainBlocks this editor can edit
       VectorPtr<TerrainBlock*> mTerrainBlocks;
-      
-      Point2I  mGridUpdateMin;
-      Point2I  mGridUpdateMax;
-      U32 mMouseDownSeq;
 
-      /// If one of these flags when the terrainEditor goes to render
-      /// an appropriate update method will be called on the terrain.
-      /// This prevents unnecessary work from happening from directly
-      /// within an editor event's process method.
-      bool mNeedsGridUpdate;
-      bool mNeedsMaterialUpdate;
+      U32 mMouseDownSeq;
 
       bool                       mMouseDown;
       PlaneF                     mMousePlane;
@@ -296,8 +142,6 @@ class TerrainEditor : public EditTSCtrl
       };
 
       void submitUndo( Selection *sel );
-
-      Selection *mUndoSel;
 
       class TerrainMaterialUndoAction : public UndoAction
       {
@@ -347,10 +191,6 @@ class TerrainEditor : public EditTSCtrl
       bool worldToGrid(const Point3F & wPos, GridPoint & gPoint);
       bool worldToGrid(const Point3F & wPos, Point2I & gPos, TerrainBlock* terrain = NULL);
 
-      // Converts any point that is off of the main tile to its equivalent on the main tile
-      // Returns true if the point was already on the main tile
-      bool gridToCenter(const Point2I & gPos, Point2I & cPos) const;
-
       //bool getGridInfo(const Point3F & wPos, GridInfo & info);
       // Gets the grid info for a point on a TerrainBlock's grid
       bool getGridInfo(const GridPoint & gPoint, GridInfo & info);
@@ -368,7 +208,6 @@ class TerrainEditor : public EditTSCtrl
       TerrainBlock* collide(const Gui3DMouseEvent & event, Point3F & pos);
       void lockSelection(bool lock) { mSelectionLocked = lock; };
 
-      Selection * getUndoSel(){return(mUndoSel);}
       Selection * getCurrentSel(){return(mCurrentSel);}
       void setCurrentSel(Selection * sel) { mCurrentSel = sel; }
       void resetCurrentSel() {mCurrentSel = &mDefaultSel; }
@@ -395,8 +234,6 @@ class TerrainEditor : public EditTSCtrl
 
 
       // terrain interface functions
-      // Returns the height at a grid point
-      F32 getGridHeight(const GridPoint & gPoint);
       // Sets a height at a grid point
       void setGridHeight(const GridPoint & gPoint, const F32 height);
 
@@ -474,10 +311,6 @@ class TerrainEditor : public EditTSCtrl
       void renderScene(const RectI & updateRect);
       void renderGui( Point2I offset, const RectI &updateRect );
       void updateGuiInfo();
-
-      // Determine if the given grid point is valid within a non-wrap
-      // around terrain.
-      bool isPointInTerrain( const GridPoint & gPoint);
 
       /// Reorder material at the given index to the new position, changing the order in which it is rendered / blended
       void reorderMaterial( S32 index, S32 orderPos );

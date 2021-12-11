@@ -30,7 +30,7 @@
 
 void SelectAction::process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type)
 {
-   if(sel == mTerrainEditor->getCurrentSel())
+   if(sel == mContext->mSelection)
       return;
 
    if(type == Process)
@@ -41,14 +41,14 @@ void SelectAction::process(Selection * sel, const Gui3DMouseEvent & event, bool 
       if(event.modifier & SI_MULTISELECT)
       {
          for(U32 i = 0; i < sel->size(); i++)
-            mTerrainEditor->getCurrentSel()->remove((*sel)[i]);
+             mContext->mSelection->remove((*sel)[i]);
       }
       else
       {
          for(U32 i = 0; i < sel->size(); i++)
          {
             GridInfo gInfo;
-            if(mTerrainEditor->getCurrentSel()->getInfo((*sel)[i].mGridPoint.gridPos, gInfo))
+            if(mContext->mSelection->getInfo((*sel)[i].mGridPoint.gridPos, gInfo))
             {
                if(!gInfo.mPrimarySelect)
                   gInfo.mPrimarySelect = (*sel)[i].mPrimarySelect;
@@ -56,10 +56,10 @@ void SelectAction::process(Selection * sel, const Gui3DMouseEvent & event, bool 
                if(gInfo.mWeight < (*sel)[i].mWeight)
                   gInfo.mWeight = (*sel)[i].mWeight;
 
-               mTerrainEditor->getCurrentSel()->setInfo(gInfo);
+               mContext->mSelection->setInfo(gInfo);
             }
             else
-               mTerrainEditor->getCurrentSel()->add((*sel)[i]);
+               mContext->mSelection->add((*sel)[i]);
          }
       }
    }
@@ -67,7 +67,7 @@ void SelectAction::process(Selection * sel, const Gui3DMouseEvent & event, bool 
 
 void DeselectAction::process(Selection * sel, const Gui3DMouseEvent & event, bool selChanged, Type type)
 {
-   if(sel == mTerrainEditor->getCurrentSel())
+   if(sel == mContext->mSelection)
       return;
 
    if(type == Process)
@@ -76,7 +76,7 @@ void DeselectAction::process(Selection * sel, const Gui3DMouseEvent & event, boo
    if(selChanged)
    {
       for(U32 i = 0; i < sel->size(); i++)
-         mTerrainEditor->getCurrentSel()->remove((*sel)[i]);
+         mContext->mSelection->remove((*sel)[i]);
    }
 }
 
@@ -84,25 +84,25 @@ void DeselectAction::process(Selection * sel, const Gui3DMouseEvent & event, boo
 
 void SoftSelectAction::process(Selection * sel, const Gui3DMouseEvent &, bool selChanged, Type type)
 {
-   TerrainBlock *terrBlock = mTerrainEditor->getActiveTerrain();
+   TerrainBlock *terrBlock = mContext->mTerrain;
    if ( !terrBlock )
       return;
       
    // allow process of current selection
    Selection tmpSel;
-   if(sel == mTerrainEditor->getCurrentSel())
+   if(sel == mContext->mSelection)
    {
       tmpSel = *sel;
       sel = &tmpSel;
    }
 
    if(type == Begin || type == Process)
-      mFilter.set(1, &mTerrainEditor->mSoftSelectFilter);
+      mFilter.set(1, &mContext->mEditor->mSoftSelectFilter);
 
    //
    if(selChanged)
    {
-      F32 radius = mTerrainEditor->mSoftSelectRadius;
+      F32 radius = mContext->mEditor->mSoftSelectRadius;
       if(radius == 0.f)
          return;
 
@@ -116,8 +116,8 @@ void SoftSelectAction::process(Selection * sel, const Gui3DMouseEvent &, bool se
          info.mPrimarySelect = true;
          info.mWeight = mFilter.getValue(0);
 
-         if(!mTerrainEditor->getCurrentSel()->add(info))
-            mTerrainEditor->getCurrentSel()->setInfo(info);
+         if(!mContext->mSelection->add(info))
+             mContext->mSelection->setInfo(info);
 
          Point2F infoPos((F32)info.mGridPoint.gridPos.x, (F32)info.mGridPoint.gridPos.y);
 
@@ -140,7 +140,7 @@ void SoftSelectAction::process(Selection * sel, const Gui3DMouseEvent &, bool se
                GridPoint gridPoint = info.mGridPoint;
                gridPoint.gridPos.set(x, y);
 
-               if(mTerrainEditor->getCurrentSel()->getInfo(Point2I(x, y), gInfo))
+               if(mContext->mSelection->getInfo(Point2I(x, y), gInfo))
                {
                   if(gInfo.mPrimarySelect)
                      continue;
@@ -148,19 +148,19 @@ void SoftSelectAction::process(Selection * sel, const Gui3DMouseEvent &, bool se
                   if(gInfo.mWeight < weight)
                   {
                      gInfo.mWeight = weight;
-                     mTerrainEditor->getCurrentSel()->setInfo(gInfo);
+                     mContext->mSelection->setInfo(gInfo);
                   }
                }
                else
                {
                   Vector<GridInfo> gInfos;
-                  mTerrainEditor->getGridInfos(gridPoint, gInfos);
+                  mContext->mEditor->getGridInfos(gridPoint, gInfos);
 
                   for (U32 z = 0; z < gInfos.size(); z++)
                   {
                      gInfos[z].mWeight = weight;
                      gInfos[z].mPrimarySelect = false;
-                     mTerrainEditor->getCurrentSel()->add(gInfos[z]);
+                     mContext->mSelection->add(gInfos[z]);
                   }
                }
             }
@@ -179,7 +179,7 @@ void OutlineSelectAction::process(Selection * sel, const Gui3DMouseEvent & event
          if(event.modifier & SI_SHIFT)
             break;
 
-         mTerrainEditor->getCurrentSel()->reset();
+         mContext->mSelection->reset();
          break;
 
       case End:
@@ -196,15 +196,15 @@ void OutlineSelectAction::process(Selection * sel, const Gui3DMouseEvent & event
 
 void PaintMaterialAction::process(Selection * sel, const Gui3DMouseEvent &, bool selChanged, Type)
 {
-   S32 mat = mTerrainEditor->getPaintMaterialIndex();
+   S32 mat = mContext->mEditor->getPaintMaterialIndex();
    if ( !selChanged || mat < 0 )
       return;
 
-   const bool slopeLimit = mTerrainEditor->mSlopeMinAngle > 0.0f || mTerrainEditor->mSlopeMaxAngle < 90.0f;
-   const F32 minSlope = mSin( mDegToRad( 90.0f - mTerrainEditor->mSlopeMinAngle ) );
-   const F32 maxSlope = mSin( mDegToRad( 90.0f - mTerrainEditor->mSlopeMaxAngle ) );
+   const bool slopeLimit = mContext->mEditor->mSlopeMinAngle > 0.0f || mContext->mEditor->mSlopeMaxAngle < 90.0f;
+   const F32 minSlope = mSin( mDegToRad( 90.0f - mContext->mEditor->mSlopeMinAngle ) );
+   const F32 maxSlope = mSin( mDegToRad( 90.0f - mContext->mEditor->mSlopeMaxAngle ) );
 
-   const TerrainBlock *terrain = mTerrainEditor->getActiveTerrain();
+   const TerrainBlock *terrain = mContext->mTerrain;
    const F32 squareSize = terrain->getSquareSize();
 
    Point2F p;
@@ -232,18 +232,18 @@ void PaintMaterialAction::process(Selection * sel, const Gui3DMouseEvent &, bool
       if ( inf.mMaterial == mat || inf.mMaterial == U8_MAX )
          continue;
 
-      if ( mRandF() > mTerrainEditor->getBrushPressure() )
+      if ( mRandF() > mContext->mEditor->getBrushPressure() )
          continue;
 
       inf.mMaterialChanged = true;
-      mTerrainEditor->getUndoSel()->add(inf);
+      mContext->mUndoSelection->add(inf);
 
       // Painting is really simple now... set the one mat index.
       inf.mMaterial = mat;
-      mTerrainEditor->setGridInfo(inf, true);
+      mContext->setGridInfo(inf, true);
    }
 
-   mTerrainEditor->scheduleMaterialUpdate();
+   mContext->scheduleMaterialUpdate();
 }
 
 //------------------------------------------------------------------------------
@@ -256,14 +256,14 @@ void ClearMaterialsAction::process(Selection * sel, const Gui3DMouseEvent &, boo
       {
          GridInfo &inf = (*sel)[i];
 
-         mTerrainEditor->getUndoSel()->add(inf);
+         mContext->mUndoSelection->add(inf);
          inf.mMaterialChanged = true;
 
          // Reset to the first texture layer.
-         inf.mMaterial = 0; 
-         mTerrainEditor->setGridInfo(inf);
+         inf.mMaterial = 0;
+         mContext->setGridInfo(inf, false);
       }
-      mTerrainEditor->scheduleMaterialUpdate();
+      mContext->scheduleMaterialUpdate();
    }
 }
 
@@ -285,30 +285,30 @@ void RaiseHeightAction::process( Selection *sel, const Gui3DMouseEvent &evt, boo
    GridPoint brushGridPoint = brush->getGridPoint();
 
    Vector<GridInfo> cur; // the height at the brush position
-   mTerrainEditor->getGridInfos(brushGridPoint, cur);
+   mContext->mEditor->getGridInfos(brushGridPoint, cur);
 
    if ( cur.size() == 0 )
       return;
 
    // we get 30 process actions per second (at least)
-   F32 heightAdjust = mTerrainEditor->mAdjustHeightVal / 30;
+   F32 heightAdjust = mContext->mEditor->mAdjustHeightVal / 30;
    // nothing can get higher than the current brush pos adjusted height
 
    F32 maxHeight = cur[0].mHeight + heightAdjust;
 
    for ( U32 i = 0; i < sel->size(); i++ )
    {
-      mTerrainEditor->getUndoSel()->add((*sel)[i]);
+      mContext->mUndoSelection->add((*sel)[i]);
       if ( (*sel)[i].mHeight < maxHeight )
       {
          (*sel)[i].mHeight += heightAdjust * (*sel)[i].mWeight;
          if ( (*sel)[i].mHeight > maxHeight )
             (*sel)[i].mHeight = maxHeight;
       }
-      mTerrainEditor->setGridInfo((*sel)[i]);
+       mContext->setGridInfo((*sel)[i], false);
    }   
 
-   mTerrainEditor->scheduleGridUpdate();  
+   mContext->scheduleGridUpdate();
 }
 
 //------------------------------------------------------------------------------
@@ -329,13 +329,13 @@ void LowerHeightAction::process(Selection * sel, const Gui3DMouseEvent &, bool s
    GridPoint brushGridPoint = brush->getGridPoint();
 
    Vector<GridInfo> cur; // the height at the brush position
-   mTerrainEditor->getGridInfos(brushGridPoint, cur);
+   mContext->mEditor->getGridInfos(brushGridPoint, cur);
 
    if (cur.size() == 0)
       return;
 
    // we get 30 process actions per second (at least)
-   F32 heightAdjust = -mTerrainEditor->mAdjustHeightVal / 30;
+   F32 heightAdjust = -mContext->mEditor->mAdjustHeightVal / 30;
    // nothing can get higher than the current brush pos adjusted height
 
    F32 maxHeight = cur[0].mHeight + heightAdjust;
@@ -344,17 +344,17 @@ void LowerHeightAction::process(Selection * sel, const Gui3DMouseEvent &, bool s
 
    for(U32 i = 0; i < sel->size(); i++)
    {
-      mTerrainEditor->getUndoSel()->add((*sel)[i]);
+      mContext->mUndoSelection->add((*sel)[i]);
       if((*sel)[i].mHeight > maxHeight)
       {
          (*sel)[i].mHeight += heightAdjust * (*sel)[i].mWeight;
          if((*sel)[i].mHeight < maxHeight)
             (*sel)[i].mHeight = maxHeight;
       }
-      mTerrainEditor->setGridInfo((*sel)[i]);
+      mContext->setGridInfo((*sel)[i], false);
    }
 
-   mTerrainEditor->scheduleGridUpdate();   
+   mContext->scheduleGridUpdate();
 }
 
 //------------------------------------------------------------------------------
@@ -365,11 +365,11 @@ void SetHeightAction::process(Selection * sel, const Gui3DMouseEvent &, bool sel
    {
       for(U32 i = 0; i < sel->size(); i++)
       {
-         mTerrainEditor->getUndoSel()->add((*sel)[i]);
-         (*sel)[i].mHeight = mTerrainEditor->mSetHeightVal;
-         mTerrainEditor->setGridInfo((*sel)[i]);
+         mContext->mUndoSelection->add((*sel)[i]);
+         (*sel)[i].mHeight = mContext->mEditor->mSetHeightVal;
+         mContext->setGridInfo((*sel)[i], false);
       }
-      mTerrainEditor->scheduleGridUpdate();
+      mContext->scheduleGridUpdate();
    }
 }
 
@@ -380,7 +380,7 @@ void SetEmptyAction::process(Selection * sel, const Gui3DMouseEvent &, bool selC
    if ( !selChanged )
       return;
 
-   mTerrainEditor->setMissionDirty();
+   mContext->mEditor->setMissionDirty();
 
    for ( U32 i = 0; i < sel->size(); i++ )
    {
@@ -393,14 +393,14 @@ void SetEmptyAction::process(Selection * sel, const Gui3DMouseEvent &, bool selC
       // The change flag needs to be set on the undo
       // so that it knows to restore materials.
       inf.mMaterialChanged = true;
-      mTerrainEditor->getUndoSel()->add( inf );
+      mContext->mUndoSelection->add( inf );
 
       // Set the material to empty.
       inf.mMaterial = -1;
-      mTerrainEditor->setGridInfo( inf );
+      mContext->setGridInfo( inf, false );
    }
 
-   mTerrainEditor->scheduleGridUpdate();
+   mContext->scheduleGridUpdate();
 }
 
 //------------------------------------------------------------------------------
@@ -410,7 +410,7 @@ void ClearEmptyAction::process(Selection * sel, const Gui3DMouseEvent &, bool se
    if ( !selChanged )
       return;
 
-   mTerrainEditor->setMissionDirty();
+   mContext->mEditor->setMissionDirty();
 
    for ( U32 i = 0; i < sel->size(); i++ )
    {
@@ -423,14 +423,14 @@ void ClearEmptyAction::process(Selection * sel, const Gui3DMouseEvent &, bool se
       // The change flag needs to be set on the undo
       // so that it knows to restore materials.
       inf.mMaterialChanged = true;
-      mTerrainEditor->getUndoSel()->add( inf );
+      mContext->mUndoSelection->add( inf );
 
       // Set the material
       inf.mMaterial = 0;
-      mTerrainEditor->setGridInfo( inf );
+      mContext->setGridInfo( inf, false );
    }
 
-   mTerrainEditor->scheduleGridUpdate();
+   mContext->scheduleGridUpdate();
 }
 
 //------------------------------------------------------------------------------
@@ -441,11 +441,11 @@ void ScaleHeightAction::process(Selection * sel, const Gui3DMouseEvent &, bool s
    {
       for(U32 i = 0; i < sel->size(); i++)
       {
-         mTerrainEditor->getUndoSel()->add((*sel)[i]);
-         (*sel)[i].mHeight *= mTerrainEditor->mScaleVal;
-         mTerrainEditor->setGridInfo((*sel)[i]);
+         mContext->mUndoSelection->add((*sel)[i]);
+         (*sel)[i].mHeight *= mContext->mEditor->mScaleVal;
+         mContext->setGridInfo((*sel)[i], false);
       }
-      mTerrainEditor->scheduleGridUpdate();
+      mContext->scheduleGridUpdate();
    }
 }
 
@@ -454,14 +454,14 @@ void BrushAdjustHeightAction::process(Selection * sel, const Gui3DMouseEvent & e
    if(type == Process)
       return;
 
-   TerrainBlock *terrBlock = mTerrainEditor->getActiveTerrain();
+   TerrainBlock *terrBlock = mContext->mTerrain;
    if ( !terrBlock )
       return;
 
    if(type == Begin)
    {
-      mTerrainEditor->lockSelection(true);
-      mTerrainEditor->getRoot()->mouseLock(mTerrainEditor);
+      mContext->mEditor->lockSelection(true);
+      mContext->mEditor->getRoot()->mouseLock(mContext->mEditor);
 
       // the way this works is:
       // construct a plane that goes through the collision point
@@ -486,7 +486,7 @@ void BrushAdjustHeightAction::process(Selection * sel, const Gui3DMouseEvent & e
       Point3F planeNormal;
 
       Point3F intersectPoint;
-      mTerrainEditor->collide(event, intersectPoint);
+      mContext->mEditor->collide(event, intersectPoint);
 
       mCross(mTerrainUpVector, planeCross, &planeNormal);
       mIntersectionPlane.set(intersectPoint, planeNormal);
@@ -500,7 +500,7 @@ void BrushAdjustHeightAction::process(Selection * sel, const Gui3DMouseEvent & e
       // and record the starting heights
       for(U32 i = 0; i < sel->size(); i++)
       {
-         mTerrainEditor->getUndoSel()->add((*sel)[i]);
+         mContext->mUndoSelection->add((*sel)[i]);
          (*sel)[i].mStartHeight = (*sel)[i].mHeight;
       }
    }
@@ -529,27 +529,26 @@ void BrushAdjustHeightAction::process(Selection * sel, const Gui3DMouseEvent & e
          if((*sel)[i].mHeight > 2047.f)
             (*sel)[i].mHeight = 2047.f;
 
-         mTerrainEditor->setGridInfoHeight((*sel)[i]);
+         mContext->setGridInfoHeight((*sel)[i]);
       }
-      mTerrainEditor->scheduleGridUpdate();
+      mContext->scheduleGridUpdate();
    }
    else if(type == End)
    {
-      mTerrainEditor->getRoot()->mouseUnlock(mTerrainEditor);
+      mContext->mEditor->getRoot()->mouseUnlock(mContext->mEditor);
    }
 }
 
 //------------------------------------------------------------------------------
 
-AdjustHeightAction::AdjustHeightAction(TerrainEditor * editor) :
-   BrushAdjustHeightAction(editor)
+AdjustHeightAction::AdjustHeightAction(TerrainDeformContext* context) : BrushAdjustHeightAction(context)
 {
    mCursor = 0;
 }
 
 void AdjustHeightAction::process(Selection *sel, const Gui3DMouseEvent & event, bool b, Type type)
 {
-   Selection * curSel = mTerrainEditor->getCurrentSel();
+   Selection * curSel = mContext->mSelection;
    BrushAdjustHeightAction::process(curSel, event, b, type);
 }
 
@@ -579,7 +578,7 @@ void FlattenHeightAction::process(Selection * sel, const Gui3DMouseEvent &, bool
       // set it
       for(U32 i = 0; i < sel->size(); i++)
       {
-         mTerrainEditor->getUndoSel()->add((*sel)[i]);
+         mContext->mUndoSelection->add((*sel)[i]);
 
          //
          if((*sel)[i].mPrimarySelect)
@@ -590,9 +589,9 @@ void FlattenHeightAction::process(Selection * sel, const Gui3DMouseEvent &, bool
             (*sel)[i].mHeight += (h * (*sel)[i].mWeight);
          }
 
-         mTerrainEditor->setGridInfo((*sel)[i]);
+         mContext->setGridInfo((*sel)[i], false);
       }
-      mTerrainEditor->scheduleGridUpdate();
+      mContext->scheduleGridUpdate();
    }
 }
 
@@ -608,25 +607,25 @@ void SmoothHeightAction::process(Selection * sel, const Gui3DMouseEvent &, bool 
       F32 avgHeight = 0.f;
       for(U32 k = 0; k < sel->size(); k++)
       {
-         mTerrainEditor->getUndoSel()->add((*sel)[k]);
+         mContext->mUndoSelection->add((*sel)[k]);
          avgHeight += (*sel)[k].mHeight;
       }
 
       avgHeight /= sel->size();
 
       // clamp the terrain smooth factor...
-      if(mTerrainEditor->mSmoothFactor < 0.f)
-         mTerrainEditor->mSmoothFactor = 0.f;
-      if(mTerrainEditor->mSmoothFactor > 1.f)
-         mTerrainEditor->mSmoothFactor = 1.f;
+      if(mContext->mEditor->mSmoothFactor < 0.f)
+         mContext->mEditor->mSmoothFactor = 0.f;
+      if(mContext->mEditor->mSmoothFactor > 1.f)
+         mContext->mEditor->mSmoothFactor = 1.f;
 
       // linear
       for(U32 i = 0; i < sel->size(); i++)
       {
-         (*sel)[i].mHeight += (avgHeight - (*sel)[i].mHeight) * mTerrainEditor->mSmoothFactor * (*sel)[i].mWeight;
-         mTerrainEditor->setGridInfo((*sel)[i]);
+         (*sel)[i].mHeight += (avgHeight - (*sel)[i].mHeight) * mContext->mEditor->mSmoothFactor * (*sel)[i].mWeight;
+         mContext->setGridInfo((*sel)[i], false);
       }
-      mTerrainEditor->scheduleGridUpdate();
+      mContext->scheduleGridUpdate();
    }
 }
 
@@ -647,7 +646,7 @@ void SmoothSlopeAction::process(Selection * sel, const Gui3DMouseEvent &, bool s
       Point2F pos;  
       for(U32 k = 0; k < sel->size(); k++)  
       {  
-         mTerrainEditor->getUndoSel()->add((*sel)[k]);  
+         mContext->mUndoSelection->add((*sel)[k]);
          pos = Point2F((*sel)[k].mGridPoint.gridPos.x, (*sel)[k].mGridPoint.gridPos.y);  
          z = (*sel)[k].mHeight;  
   
@@ -670,9 +669,9 @@ void SmoothSlopeAction::process(Selection * sel, const Gui3DMouseEvent &, bool s
          goalHeight = avgHeight + ((*sel)[i].mGridPoint.gridPos.x - avgPos.x)*avgSlope.x +  
             ((*sel)[i].mGridPoint.gridPos.y - avgPos.y)*avgSlope.y;  
          (*sel)[i].mHeight += (goalHeight - (*sel)[i].mHeight) * (*sel)[i].mWeight;  
-         mTerrainEditor->setGridInfo((*sel)[i]);  
+         mContext->setGridInfo((*sel)[i], false);
       }  
-      mTerrainEditor->scheduleGridUpdate();  
+      mContext->scheduleGridUpdate();
    }  
 }  
 
@@ -694,19 +693,19 @@ void PaintNoiseAction::process(Selection * sel, const Gui3DMouseEvent &, bool se
    {
       for( U32 i = 0; i < sel->size(); i++ )
       {
-         mTerrainEditor->getUndoSel()->add((*sel)[i]);
+         mContext->mUndoSelection->add((*sel)[i]);
 
          const Point2I &gridPos = (*sel)[i].mGridPoint.gridPos;
 
          const F32 noiseVal = mNoiseData[ ( gridPos.x % mNoiseSize ) + 
                                           ( ( gridPos.y % mNoiseSize ) * mNoiseSize ) ];
 
-         (*sel)[i].mHeight += (noiseVal - mMinMaxNoise.y * mScale) * (*sel)[i].mWeight * mTerrainEditor->mNoiseFactor;
+         (*sel)[i].mHeight += (noiseVal - mMinMaxNoise.y * mScale) * (*sel)[i].mWeight * mContext->mEditor->mNoiseFactor;
 
-         mTerrainEditor->setGridInfo((*sel)[i]);
+         mContext->setGridInfo((*sel)[i], false);
       }
 
-      mTerrainEditor->scheduleGridUpdate();
+      mContext->scheduleGridUpdate();
    }
 }
 /*

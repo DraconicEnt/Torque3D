@@ -46,634 +46,12 @@ ConsoleDocClass( TerrainEditor,
    "@internal"
 );
 
-Selection::Selection() :
-   Vector<GridInfo>(__FILE__, __LINE__),
-   mName(0),
-   mUndoFlags(0),
-   mHashListSize(1024)
-{
-   VECTOR_SET_ASSOCIATION(mHashLists);
-
-   // clear the hash list
-   mHashLists.setSize(mHashListSize);
-   reset();
-}
-
-Selection::~Selection()
-{
-}
-
-void Selection::reset()
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_Reset );
-
-   for(U32 i = 0; i < mHashListSize; i++)
-      mHashLists[i] = -1;
-   clear();
-}
-
-bool Selection::validate()
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_Validate );
-
-   // scan all the hashes and verify that the heads they point to point back to them
-   U32 hashesProcessed = 0;
-   for(U32 i = 0; i < mHashLists.size(); i++)
-   {
-      U32 entry = mHashLists[i];
-      if(entry == -1)
-         continue;
-
-      GridInfo info = (*this)[entry];
-      U32 hashIndex = getHashIndex(info.mGridPoint.gridPos);
-
-      if( entry != mHashLists[hashIndex] )
-      {
-         AssertFatal(false, "Selection hash lists corrupted");
-         return false;
-      }
-      hashesProcessed++;
-   }
-
-   // scan all the entries and verify that anything w/ a prev == -1 is correctly in the hash table
-   U32 headsProcessed = 0;
-   for(U32 i = 0; i < size(); i++)
-   {
-      GridInfo info = (*this)[i];
-      if(info.mPrev != -1)
-         continue;
-
-      U32 hashIndex = getHashIndex(info.mGridPoint.gridPos);
-
-      if(mHashLists[hashIndex] != i)
-      {
-         AssertFatal(false, "Selection list heads corrupted");
-         return false;
-      }
-      headsProcessed++;
-   }
-   AssertFatal(headsProcessed == hashesProcessed, "Selection's number of hashes and number of list heads differ.");
-   return true;
-}
-
-U32 Selection::getHashIndex(const Point2I & pos)
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_GetHashIndex );
-
-   Point2F pnt = Point2F((F32)pos.x, (F32)pos.y) + Point2F(1.3f,3.5f);
-   return( (U32)(mFloor(mHashLists.size() * mFmod(pnt.len() * 0.618f, 1.0f))) );
-}
-
-S32 Selection::lookup(const Point2I & pos)
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_Lookup );
-
-   U32 index = getHashIndex(pos);
-
-   S32 entry = mHashLists[index];
-
-   while(entry != -1)
-   {
-      if((*this)[entry].mGridPoint.gridPos == pos)
-         return(entry);
-
-      entry = (*this)[entry].mNext;
-   }
-
-   return(-1);
-}
-
-void Selection::insert(GridInfo info)
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_Insert );
-
-   //validate();
-   // get the index into the hash table
-   U32 index = getHashIndex(info.mGridPoint.gridPos);
-
-   // if there is an existing linked list, make it our next
-   info.mNext = mHashLists[index];
-   info.mPrev = -1;
-
-   // if there is an existing linked list, make us it's prev
-   U32 indexOfNewEntry = size();
-   if(info.mNext != -1)
-      (*this)[info.mNext].mPrev = indexOfNewEntry;
-
-   // the hash table holds the heads of the linked lists. make us the head of this list.
-   mHashLists[index] = indexOfNewEntry;
-
-   // copy us into the vector
-   push_back(info);
-   //validate();
-}
-
-bool Selection::remove(const GridInfo &info)
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_Remove );
-
-   if(size() < 1)
-      return false;
-
-   //AssertFatal( validate(), "Selection hashLists corrupted before Selection.remove()");
-
-   U32 hashIndex = getHashIndex(info.mGridPoint.gridPos);
-   S32 listHead = mHashLists[hashIndex];
-   //AssertFatal(listHead < size(), "A Selection's hash table is corrupt.");
-
-   if(listHead == -1)
-      return(false);
-
-   const S32 victimEntry = lookup(info.mGridPoint.gridPos);
-   if( victimEntry == -1 )
-      return(false);
-
-   const GridInfo victim = (*this)[victimEntry];
-   const S32 vicPrev = victim.mPrev;
-   const S32 vicNext = victim.mNext;
-
-   // remove us from the linked list, if there is one.
-   if(vicPrev != -1)
-      (*this)[vicPrev].mNext = vicNext;
-   if(vicNext != -1)
-      (*this)[vicNext].mPrev = vicPrev;
-
-   // if we were the head of the list, make our next the new head in the hash table.
-   if(vicPrev == -1)
-      mHashLists[hashIndex] = vicNext;
-
-   // if we're not the last element in the vector, copy the last element to our position.
-   if(victimEntry != size() - 1)
-   {
-      // copy last into victim, and re-cache next & prev
-      const GridInfo lastEntry = last();
-      const S32 lastPrev = lastEntry.mPrev;
-      const S32 lastNext = lastEntry.mNext;
-      (*this)[victimEntry] = lastEntry;
-
-      // update the new element's next and prev, to reestablish it in it's linked list.
-      if(lastPrev != -1)
-         (*this)[lastPrev].mNext = victimEntry;
-      if(lastNext != -1)
-         (*this)[lastNext].mPrev = victimEntry;
-
-      // if it was the head of it's list, update the hash table with its new position.
-      if(lastPrev == -1)
-      {
-         const U32 lastHash = getHashIndex(lastEntry.mGridPoint.gridPos);
-         AssertFatal(mHashLists[lastHash] == size() - 1, "Selection hashLists corrupted during Selection.remove() (oldmsg)");
-         mHashLists[lastHash] = victimEntry;
-      }
-   }
-
-   // decrement the vector, we're done here
-   pop_back();
-   //AssertFatal( validate(), "Selection hashLists corrupted after Selection.remove()");
-   return true;
-}
-
-bool Selection::add(const GridInfo &info)
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_Add );
-
-   S32 index = lookup(info.mGridPoint.gridPos);
-   if(index != -1)
-      return(false);
-
-   insert(info);
-   return(true);
-}
-
-bool Selection::getInfo(Point2I pos, GridInfo & info)
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_GetInfo );
-
-   S32 index = lookup(pos);
-   if(index == -1)
-      return(false);
-
-   info = (*this)[index];
-   return(true);
-}
-
-bool Selection::setInfo(GridInfo & info)
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_SetInfo );
-
-   S32 index = lookup(info.mGridPoint.gridPos);
-   if(index == -1)
-      return(false);
-
-   S32 next = (*this)[index].mNext;
-   S32 prev = (*this)[index].mPrev;
-
-   (*this)[index] = info;
-   (*this)[index].mNext = next;
-   (*this)[index].mPrev = prev;
-
-   return(true);
-}
-
-F32 Selection::getAvgHeight()
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_GetAvgHeight );
-
-   if(!size())
-      return(0);
-
-   F32 avg = 0.f;
-   for(U32 i = 0; i < size(); i++)
-      avg += (*this)[i].mHeight;
-
-   return(avg / size());
-}
-
-F32 Selection::getMinHeight()
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_GetMinHeight );
-
-   if(!size())
-      return(0);
-
-   F32 minHeight = (*this)[0].mHeight;
-   for(U32 i = 1; i < size(); i++)
-      minHeight = getMin(minHeight, (*this)[i].mHeight);
-
-   return minHeight;
-}
-
-F32 Selection::getMaxHeight()
-{
-   PROFILE_SCOPE( TerrainEditor_Selection_GetMaxHeight );
-
-   if(!size())
-      return(0);
-
-   F32 maxHeight = (*this)[0].mHeight;
-   for(U32 i = 1; i < size(); i++)
-      maxHeight = getMax(maxHeight, (*this)[i].mHeight);
-
-   return maxHeight;
-}
-
-Brush::Brush(TerrainEditor * editor) :
-   mTerrainEditor(editor)
-{
-   mSize = mTerrainEditor->getBrushSize();
-}
-
-const Point2I & Brush::getPosition()
-{
-   return(mGridPoint.gridPos);
-}
-
-const GridPoint & Brush::getGridPoint()
-{
-   return mGridPoint;
-}
-
-void Brush::setPosition(const Point3F & pos)
-{
-   PROFILE_SCOPE( TerrainEditor_Brush_SetPosition_Point3F );
-
-   mTerrainEditor->worldToGrid(pos, mGridPoint);
-   update();
-}
-
-void Brush::setPosition(const Point2I & pos)
-{
-   PROFILE_SCOPE( TerrainEditor_Brush_SetPosition_Point2I );
-
-   mGridPoint.gridPos = pos;
-   update();
-}
-
-void Brush::update()
-{
-   PROFILE_SCOPE( TerrainEditor_Brush_update );
-
-   if ( mGridPoint.terrainBlock )
-      rebuild();
-}
-
-void Brush::render()
-{
-   PROFILE_SCOPE( TerrainEditor_Brush_Render );
-
-   // Render the brush's outline via the derived brush class.
-   _renderOutline();
-
-   // Render the brush's interior grid points.
-
-   const U32 pointCount = mSize.x * mSize.y;
-   if ( pointCount == 0 )
-      return;
-
-   if ( mRenderList.empty() || empty() )
-      return;
-
-   Vector<GFXVertexPCT> pointList;
-   pointList.reserve( pointCount );
-
-   for(S32 x = 0; x < mSize.x; x++)
-   {
-      for(S32 y = 0; y < mSize.y; y++)
-      {
-         S32 id = mRenderList[x*mSize.x+y];
-         if ( id == -1 )
-            continue;
-
-         const GridInfo &gInfo = (*this)[ id ];
-
-         Point3F pos;
-         mTerrainEditor->gridToWorld( gInfo.mGridPoint.gridPos, pos, gInfo.mGridPoint.terrainBlock );
-
-         if ( !mTerrainEditor->project( pos, &pos ) )
-            continue;
-
-         pointList.increment();
-         GFXVertexPCT &pointInfo = pointList.last();
-
-         pointInfo.point = pos;
-
-         pointInfo.color.set( 255, 0, 255, gInfo.mWeight * 255 );
-
-         pointInfo.texCoord.set( 1.0f, 0.0f );
-      }
-   }
-
-   mTerrainEditor->renderPoints( pointList );
-}
-
-void BoxBrush::rebuild()
-{
-   PROFILE_SCOPE( TerrainEditor_BoxBrush_Rebuild );
-
-   reset();
-
-   const F32 squareSize = mGridPoint.terrainBlock->getSquareSize();
-
-   mRenderList.setSize(mSize.x*mSize.y);
-
-   Point3F center( F32(mSize.x - 1) / 2.0f * squareSize, F32(mSize.y - 1) / 2.0f * squareSize, 0.0f );
-
-   Filter filter;
-   filter.set(1, &mTerrainEditor->mSoftSelectFilter);
-
-   const Point3F mousePos = mTerrainEditor->getMousePos();
-
-   F32 xFactorScale = center.x / ( center.x + 0.5f );
-   F32 yFactorScale = center.y / ( center.y + 0.5f );
-
-   const F32 softness = mTerrainEditor->getBrushSoftness();
-   const F32 pressure = mTerrainEditor->getBrushPressure();
-
-   Point3F posw( 0,0,0 );
-   Point2I posg( 0,0 );
-   Vector<GridInfo> infos;
-
-   for ( S32 x = 0; x < mSize.x; x++ )
-   {
-      for(S32 y = 0; y < mSize.y; y++)
-      {
-         F32 xFactor = 0.0f;
-         if ( center.x > 0 )
-            xFactor = mAbs( center.x - x ) / center.x * xFactorScale;
-
-         F32 yFactor = 0.0f;
-         if ( center.y > 0 )
-            yFactor = mAbs( center.y - y ) / center.y * yFactorScale;
-
-         S32 &rl = mRenderList[x*mSize.x+y];
-
-         posw.x = mousePos.x + (F32)x * squareSize - center.x;
-         posw.y = mousePos.y + (F32)y * squareSize - center.y;
-         // round to grid coords
-         GridPoint gridPoint = mGridPoint;
-         mTerrainEditor->worldToGrid( posw, gridPoint );
-
-         // Check that the grid point is valid within the terrain.  This assumes
-         // that there is no wrap around past the edge of the terrain.
-         if(!mTerrainEditor->isPointInTerrain(gridPoint))
-         {
-            rl = -1;
-            continue;
-         }
-
-         infos.clear();
-         mTerrainEditor->getGridInfos( gridPoint, infos );
-
-         for (U32 z = 0; z < infos.size(); z++)
-         {
-            infos[z].mWeight = pressure *
-               mLerp( infos[z].mWeight, filter.getValue(xFactor > yFactor ? xFactor : yFactor), softness );
-
-            push_back(infos[z]);
-         }
-
-         rl = size()-1;
-      }
-   }
-}
-
-void BoxBrush::_renderOutline()
-{
-   F32 squareSize = mGridPoint.terrainBlock->getSquareSize();
-
-   RayInfo ri;
-   Point3F start( 0, 0, 5000.0f );
-   Point3F end( 0, 0, -5000.0f );
-   bool hit;
-
-   Vector<Point3F> pointList;
-   pointList.reserve( 64 );
-
-   const ColorI col( 255, 0, 255, 255 );
-
-   const Point3F &mousePos = mTerrainEditor->getMousePos();
-
-   static const Point2F offsetArray [5] =
-   {
-      Point2F( -1, -1 ),
-      Point2F( 1, -1 ),
-      Point2F( 1, 1 ),
-      Point2F( -1, 1 ),
-      Point2F( -1, -1 ) // repeat of offset[0]
-   };
-
-   // 64 total steps, 4 sides to the box, 16 steps per side.
-   // 64 / 4 = 16
-   const U32 steps = 16;
-
-   for ( S32 i = 0; i < 4; i++ )
-   {
-      const Point2F &offset = offsetArray[i];
-      const Point2F &next = offsetArray[i+1];
-
-      for ( S32 j = 0; j < steps; j++ )
-      {
-         F32 frac = (F32)j / ( (F32)steps - 1.0f );
-
-         Point2F tmp;
-         tmp.interpolate( offset, next, frac );
-
-         start.x = end.x = mousePos.x + tmp.x * squareSize * 0.5f * (F32)mSize.x;
-         start.y = end.y = mousePos.y + tmp.y * squareSize * 0.5f * (F32)mSize.y;
-
-         hit = gServerContainer.castRay( start, end, TerrainObjectType, &ri );
-
-         if ( hit )
-            pointList.push_back( ri.point );
-      }
-   }
-
-   mTerrainEditor->drawLineList( pointList, col, 1.0f );
-}
-
-void EllipseBrush::rebuild()
-{
-   PROFILE_SCOPE( TerrainEditor_EllipseBrush_Rebuild );
-
-   reset();
-
-   const F32 squareSize = mGridPoint.terrainBlock->getSquareSize();
-
-   mRenderList.setSize(mSize.x*mSize.y);
-
-   Point3F center( F32(mSize.x - 1) / 2.0f * squareSize, F32(mSize.y - 1) / 2.0f * squareSize, 0.0f );
-
-   Filter filter;
-   filter.set(1, &mTerrainEditor->mSoftSelectFilter);
-
-   const Point3F mousePos = mTerrainEditor->getMousePos();
-
-   // a point is in a circle if:
-   // x^2 + y^2 <= r^2
-   // a point is in an ellipse if:
-   // (ax)^2 + (by)^2 <= 1
-   // where a = 1/halfEllipseWidth and b = 1/halfEllipseHeight
-
-   // for a soft-selected ellipse,
-   // the factor is simply the filtered: ((ax)^2 + (by)^2)
-
-   F32 a = 1.0f / (F32(mSize.x) * squareSize * 0.5f);
-   F32 b = 1.0f / (F32(mSize.y) * squareSize * 0.5f);
-
-   const F32 softness = mTerrainEditor->getBrushSoftness();
-   const F32 pressure = mTerrainEditor->getBrushPressure();
-
-   Point3F posw( 0,0,0 );
-   Point2I posg( 0,0 );
-   Vector<GridInfo> infos;
-
-   for ( S32 x = 0; x < mSize.x; x++ )
-   {
-      for ( S32 y = 0; y < mSize.y; y++ )
-      {
-         F32 xp = center.x - x * squareSize;
-         F32 yp = center.y - y * squareSize;
-
-         F32 factor = (a * a * xp * xp) + (b * b * yp * yp);
-         if ( factor > 1 )
-         {
-            mRenderList[x*mSize.x+y] = -1;
-            continue;
-         }
-
-         S32 &rl = mRenderList[x*mSize.x+y];
-
-         posw.x = mousePos.x + (F32)x * squareSize - center.x;
-         posw.y = mousePos.y + (F32)y * squareSize - center.y;
-
-         // round to grid coords
-         GridPoint gridPoint = mGridPoint;
-         mTerrainEditor->worldToGrid( posw, gridPoint );
-
-         // Check that the grid point is valid within the terrain.  This assumes
-         // that there is no wrap around past the edge of the terrain.
-         if ( !mTerrainEditor->isPointInTerrain( gridPoint ) )
-         {
-            rl = -1;
-            continue;
-         }
-
-         infos.clear();
-         mTerrainEditor->getGridInfos( gridPoint, infos );
-
-         for ( U32 z = 0; z < infos.size(); z++ )
-         {
-            infos[z].mWeight = pressure * mLerp( infos[z].mWeight, filter.getValue( factor ), softness );
-            push_back(infos[z]);
-         }
-
-         rl = size()-1;
-      }
-   }
-}
-
-void EllipseBrush::_renderOutline()
-{
-   F32 squareSize = mGridPoint.terrainBlock->getSquareSize();
-
-   RayInfo ri;
-   Point3F start( 0, 0, 5000.0f );
-   Point3F end( 0, 0, -5000.0f );
-   bool hit;
-
-   Vector<Point3F> pointList;
-
-   ColorI col( 255, 0, 255, 255 );
-
-   const U32 steps = 64;
-
-   const Point3F &mousePos = mTerrainEditor->getMousePos();
-
-   for ( S32 i = 0; i < steps; i++ )
-   {
-      F32 radians = (F32)i / (F32)(steps-1) * M_2PI_F;
-      VectorF vec(0,1,0);
-      MathUtils::vectorRotateZAxis( vec, radians );
-
-      start.x = end.x = mousePos.x + vec.x * squareSize * (F32)mSize.x * 0.5f;
-      start.y = end.y = mousePos.y + vec.y * squareSize * (F32)mSize.y * 0.5f;
-
-      hit = gServerContainer.castRay( start, end, TerrainObjectType, &ri );
-
-      if ( hit )
-         pointList.push_back( ri.point );
-   }
-
-   mTerrainEditor->drawLineList( pointList, col, 1.0f );
-}
-
-SelectionBrush::SelectionBrush(TerrainEditor * editor) :
-   Brush(editor)
-{
-   //... grab the current selection
-}
-
-void SelectionBrush::rebuild()
-{
-   reset();
-   //... move the selection
-}
-
-void SelectionBrush::render(Vector<GFXVertexPCT> & vertexBuffer, S32 & verts, S32 & elems, S32 & prims, const LinearColorF & inColorFull, const LinearColorF & inColorNone, const LinearColorF & outColorFull, const LinearColorF & outColorNone) const
-{
-   //... render the selection
-}
-
 TerrainEditor::TerrainEditor() :
    mActiveTerrain(0),
    mMousePos(0,0,0),
    mMouseBrush(0),
    mInAction(false),
-   mGridUpdateMin( S32_MAX, S32_MAX ),
-   mUndoSel(0),
-   mGridUpdateMax( 0, 0 ),
-   mNeedsGridUpdate( false ),
    mMaxBrushSize(256,256),
-   mNeedsMaterialUpdate( false ),
    mMouseDown( false )
 {
    VECTOR_SET_ASSOCIATION(mActions);
@@ -692,26 +70,28 @@ TerrainEditor::TerrainEditor() :
    mIsMissionDirty = false;
    mPaintIndex = -1;
 
+   mDeformContext = new TerrainDeformContext(this);
+
    // add in all the actions here..
-   mActions.push_back(new SelectAction(this));
-   mActions.push_back(new DeselectAction(this));
-   mActions.push_back(new ClearAction(this));
-   mActions.push_back(new SoftSelectAction(this));
-   mActions.push_back(new OutlineSelectAction(this));
-   mActions.push_back(new PaintMaterialAction(this));
-   mActions.push_back(new ClearMaterialsAction(this));
-   mActions.push_back(new RaiseHeightAction(this));
-   mActions.push_back(new LowerHeightAction(this));
-   mActions.push_back(new SetHeightAction(this));
-   mActions.push_back(new SetEmptyAction(this));
-   mActions.push_back(new ClearEmptyAction(this));
-   mActions.push_back(new ScaleHeightAction(this));
-   mActions.push_back(new BrushAdjustHeightAction(this));
-   mActions.push_back(new AdjustHeightAction(this));
-   mActions.push_back(new FlattenHeightAction(this));
-   mActions.push_back(new SmoothHeightAction(this));
-   mActions.push_back(new SmoothSlopeAction(this));
-   mActions.push_back(new PaintNoiseAction(this));
+   mActions.push_back(new SelectAction(mDeformContext));
+   mActions.push_back(new DeselectAction(mDeformContext));
+   mActions.push_back(new ClearAction(mDeformContext));
+   mActions.push_back(new SoftSelectAction(mDeformContext));
+   mActions.push_back(new OutlineSelectAction(mDeformContext));
+   mActions.push_back(new PaintMaterialAction(mDeformContext));
+   mActions.push_back(new ClearMaterialsAction(mDeformContext));
+   mActions.push_back(new RaiseHeightAction(mDeformContext));
+   mActions.push_back(new LowerHeightAction(mDeformContext));
+   mActions.push_back(new SetHeightAction(mDeformContext));
+   mActions.push_back(new SetEmptyAction(mDeformContext));
+   mActions.push_back(new ClearEmptyAction(mDeformContext));
+   mActions.push_back(new ScaleHeightAction(mDeformContext));
+   mActions.push_back(new BrushAdjustHeightAction(mDeformContext));
+   mActions.push_back(new AdjustHeightAction(mDeformContext));
+   mActions.push_back(new FlattenHeightAction(mDeformContext));
+   mActions.push_back(new SmoothHeightAction(mDeformContext));
+   mActions.push_back(new SmoothSlopeAction(mDeformContext));
+   mActions.push_back(new PaintNoiseAction(mDeformContext));
    //mActions.push_back(new ThermalErosionAction(this));
 
 
@@ -758,7 +138,7 @@ TerrainEditor::~TerrainEditor()
       delete mActions[i];
 
    // undo stuff
-   delete mUndoSel;
+   delete mDeformContext;
 }
 
 TerrainAction * TerrainEditor::lookupAction(const char * name)
@@ -918,13 +298,9 @@ bool TerrainEditor::gridToWorld(const GridPoint & gPoint, Point3F & wPos)
 {
    PROFILE_SCOPE( TerrainEditor_GridToWorld );
 
-   const MatrixF & mat = gPoint.terrainBlock->getTransform();
-   Point3F origin;
-   mat.getColumn(3, &origin);
-
-   wPos.x = gPoint.gridPos.x * gPoint.terrainBlock->getSquareSize() + origin.x;
-   wPos.y = gPoint.gridPos.y * gPoint.terrainBlock->getSquareSize() + origin.y;
-   wPos.z = getGridHeight(gPoint) + origin.z;
+   // Use the terrain block gridToWorld function but use our isMainTile function due to
+   // brush specialty cases
+   gPoint.terrainBlock->gridToWorld(gPoint.gridPos, wPos);
 
    return isMainTile(gPoint);
 }
@@ -966,21 +342,6 @@ bool TerrainEditor::worldToGrid(const Point3F & wPos, Point2I & gPos, TerrainBlo
    return ret;
 }
 
-bool TerrainEditor::gridToCenter(const Point2I & gPos, Point2I & cPos) const
-{
-   // TODO: What is this for... megaterrain or tiled terrains?
-   cPos.x = gPos.x; // & TerrainBlock::BlockMask;
-   cPos.y = gPos.y;// & TerrainBlock::BlockMask;
-
-   //if (gPos.x == TerrainBlock::BlockSize)
-   //   cPos.x = gPos.x;
-   //if (gPos.y == TerrainBlock::BlockSize)
-   //   cPos.y = gPos.y;
-
-   //return isMainTile(gPos);
-   return true;
-}
-
 //------------------------------------------------------------------------------
 
 //bool TerrainEditor::getGridInfo(const Point3F & wPos, GridInfo & info)
@@ -995,13 +356,13 @@ bool TerrainEditor::getGridInfo(const GridPoint & gPoint, GridInfo & info)
    //
    info.mGridPoint = gPoint;
    info.mMaterial = getGridMaterial(gPoint);
-   info.mHeight = getGridHeight(gPoint);
+   info.mHeight = gPoint.terrainBlock->getGridHeight(gPoint.gridPos);
    info.mWeight = 1.f;
    info.mPrimarySelect = true;
    info.mMaterialChanged = false;
 
    Point2I cPos;
-   gridToCenter(gPoint.gridPos, cPos);
+   gPoint.terrainBlock->gridToCenter(gPoint.gridPos, cPos);
 
    return isMainTile(gPoint);
 }
@@ -1077,16 +438,6 @@ void TerrainEditor::setGridInfo(const GridInfo & info, bool checkActive)
    setGridMaterial(info.mGridPoint, info.mMaterial);
 }
 
-F32 TerrainEditor::getGridHeight(const GridPoint & gPoint)
-{
-   PROFILE_SCOPE( TerrainEditor_GetGridHeight );
-
-   Point2I cPos;
-   gridToCenter( gPoint.gridPos, cPos );
-   const TerrainFile *file = gPoint.terrainBlock->getFile();
-   return fixedToFloat( file->getHeight( cPos.x, cPos.y ) );
-}
-
 void TerrainEditor::gridUpdateComplete( bool materialChanged )
 {
    PROFILE_SCOPE( TerrainEditor_GridUpdateComplete );
@@ -1095,36 +446,36 @@ void TerrainEditor::gridUpdateComplete( bool materialChanged )
    // that were changed.  We should keep track of the mGridUpdate
    // in world space and transform it into terrain space.
 
-   if(mGridUpdateMin.x <= mGridUpdateMax.x)
+   if(mDeformContext->mGridUpdateMin.x <= mDeformContext->mGridUpdateMax.x)
    {
       for (U32 i = 0; i < mTerrainBlocks.size(); i++)
       {
          TerrainBlock *clientTerrain = getClientTerrain( mTerrainBlocks[i] );
          if ( materialChanged )
-            clientTerrain->updateGridMaterials(mGridUpdateMin, mGridUpdateMax);
+            clientTerrain->updateGridMaterials(mDeformContext->mGridUpdateMin, mDeformContext->mGridUpdateMax);
 
-         mTerrainBlocks[i]->updateGrid(mGridUpdateMin, mGridUpdateMax);
-         clientTerrain->updateGrid(mGridUpdateMin, mGridUpdateMax);
+         mTerrainBlocks[i]->updateGrid(mDeformContext->mGridUpdateMin, mDeformContext->mGridUpdateMax);
+         clientTerrain->updateGrid(mDeformContext->mGridUpdateMin, mDeformContext->mGridUpdateMax);
       }
    }
 
-   mGridUpdateMin.set( S32_MAX, S32_MAX );
-   mGridUpdateMax.set( 0, 0 );
-   mNeedsGridUpdate = false;
+   mDeformContext->mGridUpdateMin.set( S32_MAX, S32_MAX );
+   mDeformContext->mGridUpdateMax.set( 0, 0 );
+   mDeformContext->mNeedsGridUpdate = false;
 }
 
 void TerrainEditor::materialUpdateComplete()
 {
    PROFILE_SCOPE( TerrainEditor_MaterialUpdateComplete );
 
-   if(mActiveTerrain && (mGridUpdateMin.x <= mGridUpdateMax.x))
+   if(mActiveTerrain && (mDeformContext->mGridUpdateMin.x <= mDeformContext->mGridUpdateMax.x))
    {
       TerrainBlock * clientTerrain = getClientTerrain(mActiveTerrain);
-      clientTerrain->updateGridMaterials(mGridUpdateMin, mGridUpdateMax);
+      clientTerrain->updateGridMaterials(mDeformContext->mGridUpdateMin, mDeformContext->mGridUpdateMax);
    }
-   mGridUpdateMin.set( S32_MAX, S32_MAX );
-   mGridUpdateMax.set( 0, 0 );
-   mNeedsMaterialUpdate = false;
+   mDeformContext->mGridUpdateMin.set( S32_MAX, S32_MAX );
+   mDeformContext->mGridUpdateMax.set( 0, 0 );
+   mDeformContext->mNeedsMaterialUpdate = false;
 }
 
 void TerrainEditor::setGridHeight(const GridPoint & gPoint, const F32 height)
@@ -1132,10 +483,10 @@ void TerrainEditor::setGridHeight(const GridPoint & gPoint, const F32 height)
    PROFILE_SCOPE( TerrainEditor_SetGridHeight );
 
    Point2I cPos;
-   gridToCenter(gPoint.gridPos, cPos);
+   gPoint.terrainBlock->gridToCenter(gPoint.gridPos, cPos);
 
-   mGridUpdateMin.setMin( cPos );
-   mGridUpdateMax.setMax( cPos );
+   mDeformContext->mGridUpdateMin.setMin( cPos );
+   mDeformContext->mGridUpdateMax.setMax( cPos );
 
    gPoint.terrainBlock->setHeight(cPos, height);
 }
@@ -1145,7 +496,7 @@ U8 TerrainEditor::getGridMaterial( const GridPoint &gPoint ) const
    PROFILE_SCOPE( TerrainEditor_GetGridMaterial );
 
    Point2I cPos;
-   gridToCenter( gPoint.gridPos, cPos );
+   gPoint.terrainBlock->gridToCenter( gPoint.gridPos, cPos );
    const TerrainFile *file = gPoint.terrainBlock->getFile();
    return file->getLayerIndex( cPos.x, cPos.y );
 }
@@ -1155,7 +506,7 @@ void TerrainEditor::setGridMaterial( const GridPoint &gPoint, U8 index )
    PROFILE_SCOPE( TerrainEditor_SetGridMaterial );
 
    Point2I cPos;
-   gridToCenter( gPoint.gridPos, cPos );
+   gPoint.terrainBlock->gridToCenter( gPoint.gridPos, cPos );
    TerrainFile *file = gPoint.terrainBlock->getFile();
 
    // If we changed the empty state then we need
@@ -1164,9 +515,9 @@ void TerrainEditor::setGridMaterial( const GridPoint &gPoint, U8 index )
    if (  ( currIndex == (U8)-1 && index != (U8)-1 ) ||
          ( currIndex != (U8)-1 && index == (U8)-1 ) )
    {
-      mGridUpdateMin.setMin( cPos );
-      mGridUpdateMax.setMax( cPos );
-      mNeedsGridUpdate = true;
+      mDeformContext->mGridUpdateMin.setMin( cPos );
+      mDeformContext->mGridUpdateMax.setMax( cPos );
+      mDeformContext->mNeedsGridUpdate = true;
    }
 
    file->setLayerIndex( cPos.x, cPos.y, index );
@@ -1280,9 +631,9 @@ void TerrainEditor::onPreRender()
 {
    PROFILE_SCOPE( TerrainEditor_OnPreRender );
 
-   if ( mNeedsGridUpdate )
-      gridUpdateComplete( mNeedsMaterialUpdate );
-   else if ( mNeedsMaterialUpdate )
+   if ( mDeformContext->mNeedsGridUpdate )
+      gridUpdateComplete( mDeformContext->mNeedsMaterialUpdate );
+   else if ( mDeformContext->mNeedsMaterialUpdate )
       materialUpdateComplete();
 
    Parent::onPreRender();
@@ -1705,7 +1056,7 @@ void TerrainEditor::submitMaterialUndo( String actionName )
 void TerrainEditor::onMaterialUndo( TerrainBlock *terr )
 {
    setDirty();
-   scheduleMaterialUpdate();
+   mDeformContext->scheduleMaterialUpdate();
    setGridUpdateMinMax();
 
    terr->mDetailsDirty = true;
@@ -1822,7 +1173,7 @@ void TerrainEditor::on3DMouseDown(const Gui3DMouseEvent & event)
 
    mouseLock();
    mMouseDownSeq++;
-   mUndoSel = new Selection;
+   mDeformContext->mUndoSelection = new Selection;
    mCurrentAction->process(mMouseBrush, event, true, TerrainAction::Begin);
    // process on ticks - every 30th of a second.
    Sim::postEvent(this, new TerrainProcessActionEvent(mMouseDownSeq), Sim::getCurrentTime() + 30);
@@ -1917,12 +1268,11 @@ void TerrainEditor::on3DMouseUp(const Gui3DMouseEvent & event)
       mMouseDownSeq++;
       mCurrentAction->process( mMouseBrush, event, false, TerrainAction::End );
 
-      if ( mUndoSel->size() )
-         submitUndo( mUndoSel );
-      else
-         delete mUndoSel;
+      if ( mDeformContext->mUndoSelection->size() )
+         submitUndo( mDeformContext->mUndoSelection );
 
-      mUndoSel = 0;
+      delete mDeformContext->mUndoSelection;
+      mDeformContext->mUndoSelection = NULL;
       mInAction = false;
    }
 }
@@ -2216,7 +1566,7 @@ void TerrainEditor::processAction(const char* sAction)
    if(!getCurrentSel()->size() && !mProcessUsesBrush)
       return;
 
-   mUndoSel = new Selection;
+   mDeformContext->mUndoSelection = new Selection;
 
    Gui3DMouseEvent event;
    if(mProcessUsesBrush)
@@ -2225,12 +1575,12 @@ void TerrainEditor::processAction(const char* sAction)
       action->process(getCurrentSel(), event, true, TerrainAction::Process);
 
    // check if should delete the undo
-   if(mUndoSel->size())
-      submitUndo( mUndoSel );
+   if(mDeformContext->mUndoSelection->size())
+      submitUndo( mDeformContext->mUndoSelection );
    else
-      delete mUndoSel;
+      delete mDeformContext->mUndoSelection;
 
-   mUndoSel = 0;
+   mDeformContext->mUndoSelection = NULL;
 }
 
 S32 TerrainEditor::getNumTextures()
@@ -2354,16 +1704,6 @@ void TerrainEditor::mirrorTerrain(S32 mirrorIndex)
    // add undo selection
    submitUndo( undo );
    */
-}
-
-bool TerrainEditor::isPointInTerrain( const GridPoint & gPoint)
-{
-   PROFILE_SCOPE( TerrainEditor_IsPointInTerrain );
-
-   Point2I cPos;
-   gridToCenter( gPoint.gridPos, cPos );
-   const TerrainFile *file = gPoint.terrainBlock->getFile();
-   return file->isPointInTerrain( cPos.x, cPos.y );
 }
 
 void TerrainEditor::reorderMaterial( S32 index, S32 orderPos )
@@ -2688,7 +2028,7 @@ DefineEngineMethod( TerrainEditor, removeMaterial, void, ( S32 index ), , "( int
    terr->removeMaterial( index );
 
    object->setDirty();
-   object->scheduleMaterialUpdate();
+   object->mDeformContext->scheduleMaterialUpdate();
    object->setGridUpdateMinMax();
 }
 
@@ -2934,7 +2274,7 @@ void TerrainEditor::autoMaterialLayer( F32 mMinHeight, F32 mMaxHeight, F32 mMinS
    #endif
 
 
-   scheduleMaterialUpdate();
+   mDeformContext->scheduleMaterialUpdate();
 }
 
 DefineEngineMethod( TerrainEditor, autoMaterialLayer, void, (F32 minHeight, F32 maxHeight, F32 minSlope, F32 maxSlope, F32 coverage),,
