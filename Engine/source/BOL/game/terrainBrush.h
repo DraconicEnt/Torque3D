@@ -12,6 +12,8 @@
 #include "math/mRandom.h"
 #endif
 
+#include "BOL/game/deformationManager.h"
+
 class TerrainBrush : public GameBase
 {
     typedef GameBase Parent;
@@ -28,21 +30,14 @@ protected:
 
     static void initPersistFields();
 
-    void getCandidateTerrains(Vector<TerrainBlock*>& out);
-
     // NetObject
     U32  packUpdate(NetConnection *conn, U32 mask, BitStream* stream);
     void unpackUpdate(NetConnection *conn, BitStream* stream);
 
-    // Brush code
-    virtual void getGridPoints(Vector<GridPointSet>& out);
-    F32 getAverageTerrainHeight();
-    F32 getMinimumTerrainHeight();
-    F32 getMaximumTerrainHeight();
-
-    void lower(F32 height);
-    void flatten();
-    void paintNoise(F32 heightVariation, S32 seed = 0);
+    // Action code
+    virtual void adjustHeight(F32 height);
+    virtual void flatten();
+    virtual void paintNoise(F32 heightVariation, S32 seed = 0);
 };
 
 class RectangleTerrainBrush : public TerrainBrush
@@ -50,10 +45,8 @@ class RectangleTerrainBrush : public TerrainBrush
     typedef TerrainBrush Parent;
 
 protected:
-
-    // Rectangle parameters
-    F32 mWidth;
-    F32 mHeight;
+    //! The brush associated with this script accessible brush object.
+    RectangleDeformationBrush mBrush;
 
     // SimObject
     DECLARE_CONOBJECT(RectangleTerrainBrush);
@@ -62,8 +55,10 @@ protected:
     U32  packUpdate(NetConnection *conn, U32 mask, BitStream* stream);
     void unpackUpdate(NetConnection *conn, BitStream* stream);
 
-    // Brush Code
-    void getGridPoints(Vector<GridPointSet>& out);
-
     static void initPersistFields();
+
+    // Action code
+    virtual void adjustHeight(F32 height);
+    virtual void flatten();
+    virtual void paintNoise(F32 heightVariation, S32 seed = 0);
 };
