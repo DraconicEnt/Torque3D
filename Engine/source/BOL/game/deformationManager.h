@@ -23,6 +23,7 @@ class DeformationBrush
 public:
     Point3F mPosition;
 
+    virtual ~DeformationBrush() = default;
     virtual void packData(BitStream* stream);
     virtual void getGridPoints(bool isServer, Vector<GridPointSet>& out) = 0;
 
@@ -62,6 +63,7 @@ public:
 
     DeformationAction(DeformationBrush* brush);
 
+    virtual ~DeformationAction() = default;
     virtual void packData(BitStream* stream) = 0;
     virtual void applyAction(bool isServer) = 0;
 
