@@ -581,6 +581,62 @@ void TerrainBlock::_onZoningChanged( SceneZoneSpaceManager *zoneManager )
    mZoningDirty = true;
 }
 
+bool TerrainBlock::isPointInTerrain( const Point2I& gPoint)
+{
+    Point2I cPos;
+    gridToCenter( gPoint, cPos );
+    const TerrainFile *file = getFile();
+    return file->isPointInTerrain( cPos.x, cPos.y );
+}
+
+bool TerrainBlock::gridToCenter(const Point2I & gPos, Point2I & cPos) const
+{
+    // TODO: What is this for... megaterrain or tiled terrains?
+    cPos.x = gPos.x; // & TerrainBlock::BlockMask;
+    cPos.y = gPos.y;// & TerrainBlock::BlockMask;
+
+    //if (gPos.x == TerrainBlock::BlockSize)
+    //   cPos.x = gPos.x;
+    //if (gPos.y == TerrainBlock::BlockSize)
+    //   cPos.y = gPos.y;
+
+    //return isMainTile(gPos);
+    return true;
+}
+
+bool TerrainBlock::worldToGrid(const Point3F & wPos, Point2I & gPoint)
+{
+    gPoint = getGridPos(wPos);
+    return isMainTile(gPoint);
+}
+
+bool TerrainBlock::gridToWorld(const Point2I & gPoint, Point3F & wPos)
+{
+    const MatrixF & mat = getTransform();
+    Point3F origin;
+    mat.getColumn(3, &origin);
+
+    wPos.x = gPoint.x * getSquareSize() + origin.x;
+    wPos.y = gPoint.y * getSquareSize() + origin.y;
+    wPos.z = getGridHeight(gPoint) + origin.z;
+
+    return isMainTile(gPoint);
+}
+
+F32 TerrainBlock::getGridHeight(const Point2I & gPoint)
+{
+    Point2I cPos;
+    gridToCenter( gPoint, cPos );
+    const TerrainFile *file = getFile();
+    return fixedToFloat( file->getHeight( cPos.x, cPos.y ) );
+}
+
+bool TerrainBlock::isMainTile(const Point2I & gPoint) const
+{
+    const S32 blockSize = (S32)getBlockSize();
+    return (gPoint.x >= 0 && gPoint.x < blockSize && gPoint.y >= 0 && gPoint.y < blockSize);
+}
+
 void TerrainBlock::setHeight( const Point2I &pos, F32 height )
 {
    U16 ht = floatToFixed( height );

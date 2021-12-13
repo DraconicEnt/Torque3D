@@ -295,6 +295,7 @@ addPath("${srcDir}/math/test")
 # BOL Specific
 addPath("${srcDir}/BOL")
 addPath("${srcDir}/BOL/gui")
+addPath("${srcDir}/BOL/game")
 
 addPath("${srcDir}/platform")
 if(NOT TORQUE_SDL)
