@@ -111,7 +111,7 @@ void RectangleTerrainBrush::initPersistFields()
 
 void RectangleTerrainBrush::adjustHeight(F32 height)
 {
-    AdjustHeightAction* newAction = new AdjustHeightAction(height, new RectangleDeformationBrush(mBrush));
+    AdjustHeightDeformationAction* newAction = new AdjustHeightDeformationAction(height, new RectangleDeformationBrush(mBrush));
     DeformationManager* manager = DeformationManager::getDeformationManager();
 
     manager->registerAction(newAction);
@@ -119,7 +119,7 @@ void RectangleTerrainBrush::adjustHeight(F32 height)
 
 void RectangleTerrainBrush::flatten()
 {
-    FlattenAction* newAction = new FlattenAction(new RectangleDeformationBrush(mBrush));
+    FlattenDeformationAction* newAction = new FlattenDeformationAction(new RectangleDeformationBrush(mBrush));
     DeformationManager* manager = DeformationManager::getDeformationManager();
 
     manager->registerAction(newAction);

@@ -70,32 +70,32 @@ public:
     static DeformationAction* unpackData(BitStream* stream);
 };
 
-class FlattenAction : public DeformationAction
+class FlattenDeformationAction : public DeformationAction
 {
     typedef DeformationAction Parent;
 
 public:
-    FlattenAction(DeformationBrush* brush);
+    FlattenDeformationAction(DeformationBrush* brush);
 
     void packData(BitStream* stream) override;
     void applyAction(bool isServer) override;
 
-    static FlattenAction* unpackData(BitStream* stream);
+    static FlattenDeformationAction* unpackData(BitStream* stream);
 };
 
-class AdjustHeightAction : public DeformationAction
+class AdjustHeightDeformationAction : public DeformationAction
 {
     typedef DeformationAction Parent;
 
 public:
     F32 mHeight;
 
-    AdjustHeightAction(F32 height, DeformationBrush* brush);
+    AdjustHeightDeformationAction(F32 height, DeformationBrush* brush);
 
     void packData(BitStream* stream) override;
     void applyAction(bool isServer) override;
 
-    static AdjustHeightAction* unpackData(BitStream* stream);
+    static AdjustHeightDeformationAction* unpackData(BitStream* stream);
 };
 
 enum DeformationActionIDs

@@ -328,9 +328,9 @@ DeformationAction* DeformationAction::unpackData(BitStream* stream)
     switch (actionID)
     {
         case DeformationActionIDs::FlattenActionID:
-            return FlattenAction::unpackData(stream);
+            return FlattenDeformationAction::unpackData(stream);
         case DeformationActionIDs::AdjustHeightActionID:
-            return AdjustHeightAction::unpackData(stream);
+            return AdjustHeightDeformationAction::unpackData(stream);
     }
 
     Con::errorf("Unknown action ID in unpack!");
@@ -339,26 +339,26 @@ DeformationAction* DeformationAction::unpackData(BitStream* stream)
 
 //--------------------------------------------------------------------------
 
-FlattenAction::FlattenAction(DeformationBrush* brush) : DeformationAction(brush)
+FlattenDeformationAction::FlattenDeformationAction(DeformationBrush* brush) : DeformationAction(brush)
 {
 
 }
 
-void FlattenAction::packData(BitStream* stream)
+void FlattenDeformationAction::packData(BitStream* stream)
 {
     stream->write((U8)DeformationActionIDs::FlattenActionID);
     mBrush->packData(stream);
 }
 
-FlattenAction* FlattenAction::unpackData(BitStream* stream)
+FlattenDeformationAction* FlattenDeformationAction::unpackData(BitStream* stream)
 {
     DeformationBrush* brush = DeformationBrush::unpackData(stream);
     AssertFatal(brush, "Expected valid brush in unpack!");
 
-    return new FlattenAction(brush);
+    return new FlattenDeformationAction(brush);
 }
 
-void FlattenAction::applyAction(bool isServer)
+void FlattenDeformationAction::applyAction(bool isServer)
 {
     Vector<GridPointSet> gridPointSets;
     mBrush->getGridPoints(isServer, gridPointSets);
@@ -399,19 +399,19 @@ void FlattenAction::applyAction(bool isServer)
 
 //--------------------------------------------------------------------------
 
-AdjustHeightAction::AdjustHeightAction(F32 height, DeformationBrush* brush) : mHeight(height), DeformationAction(brush)
+AdjustHeightDeformationAction::AdjustHeightDeformationAction(F32 height, DeformationBrush* brush) : mHeight(height), DeformationAction(brush)
 {
 
 }
 
-void AdjustHeightAction::packData(BitStream* stream)
+void AdjustHeightDeformationAction::packData(BitStream* stream)
 {
     stream->write((U8)DeformationActionIDs::AdjustHeightActionID);
     stream->write(mHeight);
     mBrush->packData(stream);
 }
 
-AdjustHeightAction* AdjustHeightAction::unpackData(BitStream* stream)
+AdjustHeightDeformationAction* AdjustHeightDeformationAction::unpackData(BitStream* stream)
 {
     F32 height;
     stream->read(&height);
@@ -419,10 +419,10 @@ AdjustHeightAction* AdjustHeightAction::unpackData(BitStream* stream)
     DeformationBrush* brush = DeformationBrush::unpackData(stream);
     AssertFatal(brush, "Expected valid brush in unpack!");
 
-    return new AdjustHeightAction(height, brush);
+    return new AdjustHeightDeformationAction(height, brush);
 }
 
-void AdjustHeightAction::applyAction(bool isServer)
+void AdjustHeightDeformationAction::applyAction(bool isServer)
 {
     Vector<GridPointSet> gridPointSets;
     mBrush->getGridPoints(isServer, gridPointSets);
