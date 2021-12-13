@@ -216,6 +216,49 @@ void TerrainBrush::flatten()
     }
 }
 
+void TerrainBrush::paintNoise(F32 heightVariation, S32 seed)
+{
+    MRandomLCG generator;
+    generator.setSeed(seed);
+
+    Vector<GridPointSet> gridPointSets;
+    getGridPoints(gridPointSets);
+
+    for (U32 pointSetIteration = 0; pointSetIteration < gridPointSets.size(); ++pointSetIteration)
+    {
+        const GridPointSet &currentSet = gridPointSets[pointSetIteration];
+
+        // Keep track of the min and max update
+        Point2I gridUpdateMin(U32_MAX, U32_MAX);
+        Point2I gridUpdateMax(0, 0);
+
+        for (U32 pointIteration = 0; pointIteration < currentSet.mGridPoints.size(); ++pointIteration)
+        {
+            const Point2I& currentPoint = currentSet.mGridPoints[pointIteration];
+            const F32 currentHeight = currentSet.mTerrain->getGridHeight(currentPoint);
+
+            // Calculate center position
+            Point2I centerPosition;
+            currentSet.mTerrain->gridToCenter(currentPoint, centerPosition);
+            if(centerPosition.x < gridUpdateMin.x)
+                gridUpdateMin.x = centerPosition.x;
+            if(centerPosition.y < gridUpdateMin.y)
+                gridUpdateMin.y = centerPosition.y;
+            if(centerPosition.x > gridUpdateMax.x)
+                gridUpdateMax.x = centerPosition.x;
+            if(centerPosition.y > gridUpdateMax.y)
+                gridUpdateMax.y = centerPosition.y;
+
+            // Retrieve next random
+            const F32 randomDelta = generator.randF(-heightVariation, heightVariation);
+            currentSet.mTerrain->setHeight(centerPosition, currentHeight - randomDelta);
+        }
+
+        //if(gridUpdateMin.x <= gridUpdateMax.x)
+        currentSet.mTerrain->updateGrid(gridUpdateMin, gridUpdateMax);
+    }
+}
+
 DefineEngineMethod( TerrainBrush, getMaximumHeight, F32, ( ),,
                     "@brief Retrieve the average terrain height at the current world position.\n\n"
                     "@returns The average terrain height at the world position.\n")
@@ -249,6 +292,12 @@ DefineEngineMethod( TerrainBrush, flatten, void, ( ),,
                     "@brief Flatten the terrain at the specified position.")
 {
     object->flatten();
+}
+
+DefineEngineMethod( TerrainBrush, paintNoise, void, ( F32 heightVariation, S32 seed ),,
+                    "@brief Flatten the terrain at the specified position.")
+{
+    object->paintNoise(heightVariation, seed);
 }
 
 //--------------------------------------------------------------------------

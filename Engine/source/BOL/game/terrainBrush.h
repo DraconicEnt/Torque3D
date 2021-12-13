@@ -8,6 +8,10 @@
 #include "terrain/terrData.h"
 #endif
 
+#ifndef _MRANDOM_H_
+#include "math/mRandom.h"
+#endif
+
 class TerrainBrush : public GameBase
 {
     typedef GameBase Parent;
@@ -38,6 +42,7 @@ protected:
 
     void lower(F32 height);
     void flatten();
+    void paintNoise(F32 heightVariation, S32 seed = 0);
 };
 
 class RectangleTerrainBrush : public TerrainBrush
