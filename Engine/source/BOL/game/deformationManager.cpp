@@ -99,7 +99,7 @@ void DeformationManager::registerAction(DeformationAction* action)
 
 //--------------------------------------------------------------------------
 
-static void getCandidateTerrains(bool isServer, Vector<TerrainBlock*>& out)
+static void getCandidateTerrains(bool isServer, VectorPtr<TerrainBlock*>& out)
 {
     SceneContainer* container = &gServerContainer;
     if (!isServer)
@@ -278,7 +278,7 @@ void RectangleDeformationBrush::getGridPoints(bool isServer, Vector<GridPointSet
     const Point3F bottomRight = Point3F(mPosition.x + halfWidth, mPosition.y + halfHeight, 0.0f);
 
     // Find affected terrains
-    Vector<TerrainBlock*> candidateTerrains;
+    VectorPtr<TerrainBlock*> candidateTerrains;
     getCandidateTerrains(isServer, candidateTerrains);
 
     for (U32 iteration = 0; iteration < candidateTerrains.size(); ++iteration)
