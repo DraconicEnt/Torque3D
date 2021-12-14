@@ -28,6 +28,7 @@
 #include "console/console.h"
 #include "console/consoleTypes.h"
 #include "console/engineAPI.h"
+#include "lighting/lightManager.h"
 #include "collision/clippedPolyList.h"
 #include "collision/planeExtractor.h"
 #include "core/stream/bitStream.h"
@@ -49,6 +50,7 @@
 #include "T3D/physics/physicsPlugin.h"
 #include "T3D/physics/physicsBody.h"
 #include "T3D/physics/physicsCollision.h"
+
 
 
 namespace {
@@ -219,6 +221,11 @@ VehicleData::VehicleData()
    collDamageThresholdVel = 20;
    collDamageMultiplier = 0.05f;
    enablePhysicsRep = true;
+
+   mEnableCockpitLight = true;
+   mCockpitLightBrightness = 10.0f;
+   mCockpitLightRange = 10.0f;
+   mCockpitLightColor = LinearColorF::WHITE;
 }
 
 
@@ -387,6 +394,16 @@ void VehicleData::packData(BitStream* stream)
 
    stream->write(collDamageThresholdVel);
    stream->write(collDamageMultiplier);
+
+   // BOL pack
+   stream->writeFlag(mEnableCockpitLight);
+   if (!stream->writeFlag(mCockpitLightOffset.isIdentity()))
+   {
+      stream->writeAffineTransform(mCockpitLightOffset);
+   }
+   stream->write(mCockpitLightBrightness);
+   stream->write(mCockpitLightRange);
+   stream->write(mCockpitLightColor);
 }
 
 void VehicleData::unpackData(BitStream* stream)
@@ -483,6 +500,21 @@ void VehicleData::unpackData(BitStream* stream)
 
    stream->read(&collDamageThresholdVel);
    stream->read(&collDamageMultiplier);
+
+   // BOL unpack
+   mEnableCockpitLight = stream->readFlag();
+   if (stream->readFlag())
+   {
+      mCockpitLightOffset.identity();
+   }
+   else
+   {
+      stream->readAffineTransform(&mCockpitLightOffset);
+   }
+
+   stream->read(&mCockpitLightBrightness);
+   stream->read(&mCockpitLightRange);
+   stream->read(&mCockpitLightColor);
 }
 
 
@@ -681,6 +713,16 @@ void VehicleData::initPersistFields()
       "@brief Damage to this vehicle after a collision (multiplied by collision "
       "velocity).\n\nCurrently unused." );
 
+   // BOL Parameters
+   addGroup("Cockpit");
+      addField("enableCockpitLight", TypeBool, Offset(mEnableCockpitLight, VehicleData), "Whether or not to enable the cockpit light.");
+      addField("cockpitLightOffset", TypeMatrixPosition, Offset(mCockpitLightOffset, VehicleData), "Cockpit light position offset.");
+      addField("cockpitLightRotation", TypeMatrixRotation, Offset(mCockpitLightOffset, VehicleData), "Cockpit light rotation offset.");
+      addField("cockpitLightBrightness", TypeF32, Offset(mCockpitLightBrightness, VehicleData), "Cockpit light brightness.");
+      addField("cockpitLightRange", TypeF32, Offset(mCockpitLightRange, VehicleData), "Cockpit light range.");
+      addField("cockpitLightColor", TypeColorF, Offset(mCockpitLightColor, VehicleData), "Cockpit light color.");
+   endGroup("Cockpit");
+
    Parent::initPersistFields();
 }
 
@@ -745,6 +787,17 @@ Vehicle::Vehicle()
    mWorkingQueryBoxCountDown = sWorkingQueryBoxStaleThreshold;
 
    mPhysicsRep = NULL;
+   mCockpitLight = LightManager::createLightInfo();
+   mCockpitLight->setType(LightInfo::Type::Point);
+   mCockpitLight->setCastShadows(false);
+   mCockpitLight->setStaticRefreshFreq(8);
+   mCockpitLight->setDynamicRefreshFreq(8);
+   mCockpitLight->setPriority(1.0f);
+}
+
+Vehicle::~Vehicle()
+{
+   SAFE_DELETE(mCockpitLight);
 }
 
 U32 Vehicle::getCollisionMask()
@@ -914,8 +967,29 @@ void Vehicle::advanceTime(F32 dt)
 
    updateLiftoffDust( dt );
    updateDamageSmoke( dt );
+
+   // Update cockpit light
+   MatrixF eyeTransform;
+   getEyeBaseTransform(&eyeTransform, false);
+   eyeTransform *= mDataBlock->mCockpitLightOffset;
+
+   mCockpitLight->setTransform(eyeTransform);
 }
 
+//----------------------------------------------------------------------------
+
+void Vehicle::submitLights(LightManager* lm, bool staticLighting)
+{
+   Parent::submitLights(lm, staticLighting);
+
+   // Don't render at all if we're not first person
+   if (!isFirstPerson() || !mDataBlock->mEnableCockpitLight)
+   {
+      return;
+   }
+
+   lm->registerGlobalLight(mCockpitLight, this);
+}
 
 //----------------------------------------------------------------------------
 
@@ -924,6 +998,11 @@ bool Vehicle::onNewDataBlock(GameBaseData* dptr,bool reload)
    mDataBlock = dynamic_cast<VehicleData*>(dptr);
    if (!mDataBlock || !Parent::onNewDataBlock(dptr, reload))
       return false;
+
+   // Update light information
+   mCockpitLight->setBrightness(mDataBlock->mCockpitLightBrightness);
+   mCockpitLight->setRange(mDataBlock->mCockpitLightRange);
+   mCockpitLight->setColor(mDataBlock->mCockpitLightColor);
 
    // Update Rigid Info
    mRigid.mass = mDataBlock->mass;

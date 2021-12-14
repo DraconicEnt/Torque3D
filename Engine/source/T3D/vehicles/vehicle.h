@@ -126,6 +126,13 @@ struct VehicleData : public RigidShapeData
 
    bool enablePhysicsRep;
 
+   // BOL
+   bool mEnableCockpitLight;
+   MatrixF mCockpitLightOffset;
+   F32 mCockpitLightRange;
+   F32 mCockpitLightBrightness;
+   LinearColorF mCockpitLightColor;
+
    //
    VehicleData();
    bool preload(bool server, String &errorStr);
@@ -150,6 +157,7 @@ class Vehicle : public RigidShape
    SFXSource* mWakeSound;
 
    // BOL
+   LightInfo* mCockpitLight;
    TSShapeInstance*  mCockpitShapeInstance;
 
     // Control
@@ -160,6 +168,9 @@ class Vehicle : public RigidShape
    GFXStateBlockRef  mSolidSB;
 
    SimObjectPtr<ParticleEmitter> mDamageEmitterList[VehicleData::VC_NUM_DAMAGE_EMITTERS];
+
+   // ISceneLight (cockpit)
+   void submitLights(LightManager* lm, bool staticLighting);
 
    //
    virtual bool onNewDataBlock( GameBaseData *dptr, bool reload );
@@ -200,6 +211,7 @@ public:
 
    //
    Vehicle();
+   ~Vehicle();
    static void consoleInit();
    static void initPersistFields();
    void processTick(const Move *move);
