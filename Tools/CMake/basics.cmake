@@ -105,6 +105,20 @@ macro(addPathRec dir)
 endmacro()
 
 ###############################################################################
+###  Gameplay Modules Lib Check
+###############################################################################
+macro(subDirCmake result curdir)
+	file(GLOB children RELATIVE ${curdir} ${curdir}/*)
+	set(dirList "")
+	foreach(child ${children})
+		if(IS_DIRECTORY ${curdir}/${child})
+			LIST(APPEND dirList ${curdir}/${child})
+		endif()
+	endforeach()
+	set(${result} ${dirList})
+endmacro()
+
+###############################################################################
 ### Definition Handling
 ###############################################################################
 macro(__addDef def config)
@@ -334,12 +348,17 @@ macro(finishLibrary)
         add_library("${PROJECT_NAME}" SHARED ${${PROJECT_NAME}_files})
     endif()
 
+    target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_11)
+
     # omg - only use the first folder ... otherwise we get lots of header name collisions
     #foreach(dir ${${PROJECT_NAME}_paths})
     addInclude("${firstDir}")
     #endforeach()
 
     _postTargetProcess()
+
+    #set the folder property name
+    set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER ${TORQUE_LIBS_FOLDER_NAME})
 endmacro()
 
 # macro to add an executable
@@ -367,6 +386,10 @@ macro(finishExecutable)
     else()
         add_executable("${PROJECT_NAME}" WIN32 ${${PROJECT_NAME}_files})
     endif()
+
+    # Torque requires c++17
+    target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+
     addInclude("${firstDir}")
 
     _postTargetProcess()

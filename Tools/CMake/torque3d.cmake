@@ -48,8 +48,6 @@ if(UNIX)
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse")
         endif()
     endif()
-
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
 ###############################################################################
@@ -385,10 +383,20 @@ addPathRec("${projectSrcDir}")
 # Load module-based files
 if(EXISTS ${TORQUE_APP_DIR}/game/data)
     message("Reading modules in ${TORQUE_APP_DIR}/game/data path...")
-
-    addInclude("${TORQUE_APP_DIR}/game/data")
-    addPathRec("${TORQUE_APP_DIR}/game/data")
+	
+	subDirCmake(MODULEDIRS ${TORQUE_APP_DIR}/game/data)
+	foreach(modDir ${MODULEDIRS})
+		addInclude("${modDir}/source")
+		addPathRec("${modDir}/source")
+		file(GLOB modules "${modDir}/lib/*.cmake")
+		foreach(module ${modules})
+			set(moduleLibDir "${modDir}/lib")
+			include(${module})
+		endforeach()
+		
+	endforeach()
 endif()
+
 if(EXISTS ${TORQUE_APP_DIR}/game/tools)
     message("Reading modules in ${TORQUE_APP_DIR}/game/tools path...")
 
@@ -600,11 +608,15 @@ if(APPLE)
     addPath("${srcDir}/platformPOSIX")
 endif()
 
+if (UNIX AND NOT APPLE)
+    addPath("${srcDir}/platformX11")
+endif()
+
 if(UNIX AND NOT APPLE)
     # linux_dedicated
     if(TORQUE_DEDICATED)
 		addPath("${srcDir}/windowManager/dedicated")
-		# ${srcDir}/platformX86UNIX/*.client.* files are not needed
+		# ${srcDir}/UNIX/*.client.* files are not needed
 		# @todo: move to separate file
 		file( GLOB tmp_files
              ${srcDir}/platformX86UNIX/*.cpp
@@ -646,7 +658,7 @@ finishExecutable()
 ###############################################################################
 
 # Set Visual Studio startup project
-if((${CMAKE_VERSION} VERSION_EQUAL 3.6.0) OR (${CMAKE_VERSION} VERSION_GREATER 3.6.0) AND MSVC)
+if(MSVC)
 set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${TORQUE_APP_NAME})
 endif()
 
@@ -964,5 +976,28 @@ if(TORQUE_TEMPLATE)
         INSTALL(FILES "${CMAKE_SOURCE_DIR}/Templates/${TORQUE_TEMPLATE}/DeleteCachedDTSs.bat" DESTINATION "${TORQUE_APP_DIR}")
         INSTALL(FILES "${CMAKE_SOURCE_DIR}/Templates/${TORQUE_TEMPLATE}/DeleteDSOs.bat"       DESTINATION "${TORQUE_APP_DIR}")
         INSTALL(FILES "${CMAKE_SOURCE_DIR}/Templates/${TORQUE_TEMPLATE}/DeletePrefs.bat"      DESTINATION "${TORQUE_APP_DIR}")
+    endif()
+endif()
+
+###############################################################################
+# Properties folder
+###############################################################################
+# we only need to add libs that we add via add_subdirectory command, basics.cmake
+# will take care of the other source libs added via addLib 
+
+if(TORQUE_SFX_OPENAL AND WIN32)
+    set_target_properties(OpenAL PROPERTIES FOLDER ${TORQUE_LIBS_FOLDER_NAME})
+     #why is openal adding these two?
+    set_target_properties(common PROPERTIES FOLDER ${TORQUE_LIBS_FOLDER_NAME})
+    set_target_properties(ex-common PROPERTIES FOLDER ${TORQUE_LIBS_FOLDER_NAME})
+endif()
+
+if(TORQUE_SDL)
+    # Apple config has slightly different target names
+    if (APPLE)
+        set_target_properties(SDL2main PROPERTIES FOLDER ${TORQUE_LIBS_FOLDER_NAME})
+        set_target_properties(SDL2-static PROPERTIES FOLDER ${TORQUE_LIBS_FOLDER_NAME})
+    else()
+        set_target_properties(SDL2 PROPERTIES FOLDER ${TORQUE_LIBS_FOLDER_NAME})
     endif()
 endif()

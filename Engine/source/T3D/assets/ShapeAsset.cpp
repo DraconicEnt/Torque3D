@@ -49,6 +49,7 @@
 #ifdef TORQUE_TOOLS
 #include "ts/tsLastDetail.h"
 #endif
+#include "util/imposterCapture.h"
 
 StringTableEntry ShapeAsset::smNoShapeAssetFallback = NULL;
 
@@ -128,6 +129,13 @@ ShapeAsset::ShapeAsset()
    mConstructorFileName = StringTable->EmptyString();
    mFilePath = StringTable->EmptyString();
    mConstructorFilePath = StringTable->EmptyString();
+
+   mDiffuseImposterFileName = StringTable->EmptyString();
+   mDiffuseImposterPath = StringTable->EmptyString();
+   mNormalImposterFileName = StringTable->EmptyString();
+   mNormalImposterPath = StringTable->EmptyString();
+
+
    mLoadedState = AssetErrCode::NotLoaded;
 }
 
@@ -161,6 +169,12 @@ void ShapeAsset::initPersistFields()
       &setShapeFile, &getShapeFile, "Path to the shape file we want to render");
    addProtectedField("constuctorFileName", TypeAssetLooseFilePath, Offset(mConstructorFileName, ShapeAsset),
       &setShapeConstructorFile, &getShapeConstructorFile, "Path to the shape file we want to render");
+
+   addProtectedField("diffuseImposterFileName", TypeAssetLooseFilePath, Offset(mDiffuseImposterFileName, ShapeAsset),
+      &setDiffuseImposterFile, &getDiffuseImposterFile, "Path to the diffuse imposter file we want to render");
+   addProtectedField("normalImposterFileName", TypeAssetLooseFilePath, Offset(mNormalImposterFileName, ShapeAsset),
+      &setNormalImposterFile, &getNormalImposterFile, "Path to the normal imposter file we want to render");
+
 }
 
 void ShapeAsset::setDataField(StringTableEntry slotName, StringTableEntry array, StringTableEntry value)
@@ -191,6 +205,20 @@ void ShapeAsset::initializeAsset()
    mFilePath = getOwned() ? expandAssetFilePath(mFileName) : mFilePath;
 
    mConstructorFilePath = getOwned() ? expandAssetFilePath(mConstructorFilePath) : mConstructorFilePath;
+
+   mDiffuseImposterPath = getOwned() ? expandAssetFilePath(mDiffuseImposterFileName) : mDiffuseImposterFileName;
+   if (mDiffuseImposterPath == StringTable->EmptyString())
+   {
+      String diffusePath = String(mFilePath) + "_imposter.dds";
+      mDiffuseImposterPath = StringTable->insert(diffusePath.c_str());
+   }
+
+   mNormalImposterPath = getOwned() ? expandAssetFilePath(mNormalImposterFileName) : mNormalImposterFileName;
+   if (mNormalImposterPath == StringTable->EmptyString())
+   {
+      String normalPath = String(mFilePath) + "_imposter_normals.dds";
+      mNormalImposterPath = StringTable->insert(normalPath.c_str());
+   }
 
    loadShape();
 }
@@ -226,6 +254,42 @@ void ShapeAsset::setShapeConstructorFile(const char* pShapeConstructorFile)
       return;
 
    mConstructorFileName = getOwned() ? expandAssetFilePath(pShapeConstructorFile) : pShapeConstructorFile;
+
+   // Refresh the asset.
+   refreshAsset();
+}
+
+void ShapeAsset::setDiffuseImposterFile(const char* pImageFile)
+{
+   // Sanity!
+   AssertFatal(pImageFile != NULL, "Cannot use a NULL image file.");
+
+   // Fetch image file.
+   pImageFile = StringTable->insert(pImageFile, true);
+
+   // Ignore no change,
+   if (pImageFile == mDiffuseImposterFileName)
+      return;
+
+   mDiffuseImposterFileName = getOwned() ? expandAssetFilePath(pImageFile) : pImageFile;
+
+   // Refresh the asset.
+   refreshAsset();
+}
+
+void ShapeAsset::setNormalImposterFile(const char* pImageFile)
+{
+   // Sanity!
+   AssertFatal(pImageFile != NULL, "Cannot use a NULL image file.");
+
+   // Fetch image file.
+   pImageFile = StringTable->insert(pImageFile, true);
+
+   // Ignore no change,
+   if (pImageFile == mNormalImposterFileName)
+      return;
+
+   mNormalImposterFileName = getOwned() ? expandAssetFilePath(pImageFile) : pImageFile;
 
    // Refresh the asset.
    refreshAsset();
@@ -290,6 +354,10 @@ bool ShapeAsset::loadShape()
       mLoadedState = BadFileReference;
       return false; //if it failed to load, bail out
    }
+
+   mShape->setupBillboardDetails(mFilePath, mDiffuseImposterPath, mNormalImposterPath);
+
+   //If they exist, grab our imposters here and bind them to our shapeAsset
 
    bool hasBlends = false;
 
@@ -599,8 +667,8 @@ GuiControl* GuiInspectorTypeShapeAssetPtr::constructEditControl()
 
    // Change filespec
    char szBuffer[512];
-   dSprintf(szBuffer, sizeof(szBuffer), "AssetBrowser.showDialog(\"ShapeAsset\", \"AssetBrowser.changeAsset\", %s, %s);", 
-      mInspector->getInspectObject()->getIdString(), mCaption);
+   dSprintf(szBuffer, sizeof(szBuffer), "AssetBrowser.showDialog(\"ShapeAsset\", \"AssetBrowser.changeAsset\", %s, %s);",
+      mInspector->getIdString(), mCaption);
    mBrowseButton->setField("Command", szBuffer);
 
    setDataField(StringTable->insert("targetObject"), NULL, mInspector->getInspectObject()->getIdString());

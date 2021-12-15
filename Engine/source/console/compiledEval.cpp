@@ -691,11 +691,11 @@ ConsoleValue CodeBlock::exec(U32 ip, const char* functionName, Namespace* thisNa
          setFrame = -1;
 
       // Do we want this code to execute using a new stack frame?
-      if (setFrame < 0)
+      // compiling a file will force setFrame to 0, forcing us to get a new frame.
+      if (setFrame <= 0)
       {
          // argc is the local count for eval
          gEvalState.pushFrame(NULL, NULL, argc);
-         gCallStack.pushFrame(0);
          popFrame = true;
       }
       else
@@ -2022,7 +2022,11 @@ ConsoleValue CodeBlock::exec(U32 ip, const char* functionName, Namespace* thisNa
                      break;
                   }
 
-                  Con::warnf(ConsoleLogEntry::General, "%s: Call to %s in %s uses result of void function call.", getFileLine(ip - 4), fnName, functionName);
+                  if (Con::getBoolVariable("$Con::warnVoidAssignment", true))
+                  {
+                     Con::warnf(ConsoleLogEntry::General, "%s: Call to %s in %s uses result of void function call.", getFileLine(ip - 4), fnName, functionName);
+                  }
+                  
                   stack[_STK + 1].setEmptyString();
                   _STK++;
 
