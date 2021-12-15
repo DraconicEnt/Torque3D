@@ -338,6 +338,13 @@ public:
 
    //BaseMatInstance* getMaterialInst( U32 x, U32 y );
 
+   bool isPointInTerrain( const Point2I& gPoint);
+   bool gridToCenter(const Point2I & gPos, Point2I & cPos) const;
+   bool worldToGrid(const Point3F & wPos, Point2I & gPoint);
+   bool gridToWorld(const Point2I & gPoint, Point3F & wPos);
+   F32 getGridHeight(const Point2I & gPoint);
+   bool isMainTile(const Point2I & gPoint) const;
+
    void setHeight( const Point2I &pos, F32 height );
    F32 getHeight( const Point2I &pos );
 

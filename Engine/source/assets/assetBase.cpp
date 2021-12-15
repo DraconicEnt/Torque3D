@@ -51,6 +51,11 @@ StringTableEntry assetAutoUnloadField = StringTable->insert("AssetAutoUnload");
 StringTableEntry assetInternalField = StringTable->insert("AssetInternal");
 StringTableEntry assetPrivateField = StringTable->insert("AssetPrivate");
 
+StringTableEntry assetSourceURLField = StringTable->insert("AssetSourceURL");
+StringTableEntry assetAuthorNameField = StringTable->insert("AssetAuthorName");
+StringTableEntry assetLicenseField = StringTable->insert("AssetLicense");
+StringTableEntry assetAuthorURLField = StringTable->insert("AssetAuthorURL");
+
 //-----------------------------------------------------------------------------
 const String AssetBase::mErrCodeStrings[] =
 {
@@ -103,6 +108,12 @@ void AssetBase::initPersistFields()
    addProtectedField(assetAutoUnloadField, TypeBool, 0, &setAssetAutoUnload, &getAssetAutoUnload, &writeAssetAutoUnload, "Whether the asset is automatically unloaded when an asset is released and has no other acquisitions or not.");
    addProtectedField(assetInternalField, TypeBool, 0, &setAssetInternal, &getAssetInternal, &writeAssetInternal, "Whether the asset is used internally only or not.");
    addProtectedField(assetPrivateField, TypeBool, 0, &defaultProtectedNotSetFn, &getAssetPrivate, &defaultProtectedNotWriteFn, "Whether the asset is private or not.");
+
+   // Asset licensing / source information
+   addProtectedField(assetSourceURLField, TypeString, 0, &setAssetSourceURL, &getAssetSourceURL, &writeAssetSourceURL, "The URL the asset has come from.");
+   addProtectedField(assetAuthorNameField, TypeString, 0, &setAssetAuthorName, &getAssetAuthorName, &writeAssetAuthorName, "The name of the asset.  The is not a unique identification like an asset Id.");
+   addProtectedField(assetLicenseField, TypeString, 0, &setAssetLicense, &getAssetLicense, &writeAssetLicense, "The name of the asset.  The is not a unique identification like an asset Id.");
+   addProtectedField(assetAuthorURLField, TypeString, 0, &setAssetAuthorURL, &getAssetAuthorURL, &writeAssetAuthorURL, "The name of the asset.  The is not a unique identification like an asset Id.");
 }
 
 //------------------------------------------------------------------------------
@@ -124,6 +135,10 @@ void AssetBase::copyTo(SimObject* object)
    pAsset->setAssetCategory(getAssetCategory());
    pAsset->setAssetAutoUnload(getAssetAutoUnload());
    pAsset->setAssetInternal(getAssetInternal());
+   pAsset->setAssetAuthorName(getAssetAuthorName());
+   pAsset->setAssetLicense(getAssetLicense());
+   pAsset->setAssetAuthorURL(getAssetAuthorURL());
+   pAsset->setAssetSourceURL(getAssetSourceURL());
 }
 
 //-----------------------------------------------------------------------------
@@ -450,6 +465,12 @@ void AssetBase::setOwned(AssetManager* pAssetManager, AssetDefinition* pAssetDef
    AssertFatal(mpAssetDefinition->mAssetCategory == pAssetDefinition->mAssetCategory, "Asset ownership differs by asset category.");
    AssertFatal(mpAssetDefinition->mAssetAutoUnload == pAssetDefinition->mAssetAutoUnload, "Asset ownership differs by asset auto-unload flag.");
    AssertFatal(mpAssetDefinition->mAssetInternal == pAssetDefinition->mAssetInternal, "Asset ownership differs by asset internal flag.");
+
+   AssertFatal(mpAssetDefinition->mAssetSourceURL == pAssetDefinition->mAssetSourceURL, "Asset ownership differs by source URL.");
+   AssertFatal(mpAssetDefinition->mAssetAuthorURL == pAssetDefinition->mAssetAuthorURL, "Asset ownership differs by author URL.");
+   AssertFatal(mpAssetDefinition->mAssetLicense == pAssetDefinition->mAssetLicense, "Asset ownership differs by license.");
+   AssertFatal(mpAssetDefinition->mAssetAuthorName == pAssetDefinition->mAssetAuthorName, "Asset ownership differs by author name.");
+
 
    // Transfer asset definition ownership state.
    delete mpAssetDefinition;

@@ -124,6 +124,17 @@ void GuiMLTextEditCtrl::onLoseFirstResponder()
 }
 
 //--------------------------------------------------------------------------
+void GuiMLTextEditCtrl::onMouseDown(const GuiEvent &event)
+{
+    if (!isActive())
+        return;
+
+    setFirstResponder();
+
+    Parent::onMouseDown(event);
+}
+
+//--------------------------------------------------------------------------
 bool GuiMLTextEditCtrl::onWake()
 {
    if( !Parent::onWake() )

@@ -291,7 +291,11 @@ addPath("${srcDir}/windowManager/test")
 addPath("${srcDir}/math")
 addPath("${srcDir}/math/util")
 addPath("${srcDir}/math/test")
+
+# BOL Specific
 addPath("${srcDir}/BOL")
+addPath("${srcDir}/BOL/gui")
+addPath("${srcDir}/BOL/game")
 
 addPath("${srcDir}/platform")
 if(NOT TORQUE_SDL)
@@ -983,7 +987,7 @@ endif()
 # Properties folder
 ###############################################################################
 # we only need to add libs that we add via add_subdirectory command, basics.cmake
-# will take care of the other source libs added via addLib 
+# will take care of the other source libs added via addLib
 
 if(TORQUE_SFX_OPENAL AND WIN32)
     set_target_properties(OpenAL PROPERTIES FOLDER ${TORQUE_LIBS_FOLDER_NAME})

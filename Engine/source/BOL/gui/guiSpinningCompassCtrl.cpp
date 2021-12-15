@@ -1,5 +1,5 @@
 #include "platform/platform.h"
-#include "gui/controls/guiSpinningCompassCtrl.h"
+#include "BOL/gui/guiSpinningCompassCtrl.h"
 
 #include "console/console.h"
 #include "console/consoleTypes.h"

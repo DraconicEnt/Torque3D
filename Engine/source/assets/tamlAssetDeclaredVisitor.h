@@ -129,6 +129,30 @@ public:
                 mAssetDefinition.mAssetInternal = dAtob( pPropertyValue );
                 return true;
             }
+            // Author name?
+            else if ( propertyName == assetAuthorNameField )
+            {
+                mAssetDefinition.mAssetAuthorName = StringTable->insert( pPropertyValue );
+                return true;
+            }
+            // Author URL?
+            else if ( propertyName == assetAuthorURLField )
+            {
+                mAssetDefinition.mAssetAuthorURL = StringTable->insert( pPropertyValue );
+                return true;
+            }
+            // Source URL?
+            else if ( propertyName == assetSourceURLField )
+            {
+                mAssetDefinition.mAssetSourceURL = StringTable->insert( pPropertyValue );
+                return true;
+            }
+            // Asset License?
+            else if ( propertyName == assetLicenseField )
+            {
+                mAssetDefinition.mAssetLicense = StringTable->insert( pPropertyValue );
+                return true;
+            }
         }
 
         // Fetch property word count.

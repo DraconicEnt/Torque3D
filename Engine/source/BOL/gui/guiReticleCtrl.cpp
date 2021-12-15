@@ -21,7 +21,7 @@
 //-----------------------------------------------------------------------------
 
 #include "platform/platform.h"
-#include "gui/controls/guiReticleCtrl.h"
+#include "BOL/gui/guiReticleCtrl.h"
 
 #include "console/console.h"
 #include "console/consoleTypes.h"
@@ -165,7 +165,7 @@ void GuiReticleCtrl::drawBitmapCentered(GFXTexHandle texture, const Point2I& pos
    const S32 bitmapHalfWidth = texture->getWidth() / 2;
    const S32 bitmapHalfHeight = texture->getHeight() / 2;
 
-   GFX->getDrawUtil()->drawBitmap(mBitmap, position - Point2I(bitmapHalfWidth, bitmapHalfHeight), GFXBitmapFlip_None, GFXTextureFilterLinear, true, mAngle);
+   GFX->getDrawUtil()->drawBitmap(texture, position - Point2I(bitmapHalfWidth, bitmapHalfHeight), GFXBitmapFlip_None, GFXTextureFilterLinear, true, mAngle);
 }
 
 GuiTSCtrl* GuiReticleCtrl::getTSControl()
@@ -188,7 +188,6 @@ GuiTSCtrl* GuiReticleCtrl::getTSControl()
 
 void GuiReticleCtrl::onRender(Point2I offset, const RectI &updateRect)
 {
-
    if (mBitmap)
    {
       GFX->getDrawUtil()->clearBitmapModulation();
@@ -221,40 +220,43 @@ void GuiReticleCtrl::onRender(Point2I offset, const RectI &updateRect)
                   if (currentMountedObject)
                   {
                      TurretShape* turret = dynamic_cast<TurretShape*>(currentMountedObject);
-
                      if (turret)
                      {
-                        MatrixF eyeMatrix;
-                        turret->getEyeTransform(&eyeMatrix);
+                        ShapeBaseImageData* mountedImage = turret->getMountedImage(0);
 
-                        // Eye vector
-                        VectorF eyeVector;
-                        eyeMatrix.getColumn(1, &eyeVector);
-
-                        // Eye position
-                        VectorF eyePos;
-                        eyeMatrix.getColumn(3, &eyePos);
-
-                        // Make sure the eye vector covers the distance.
-                        const F32 distance = 1000.0f;
-                        eyeVector *= distance;
-
-                        // Perform actual raycast
-                        VectorF start = eyePos;
-                        VectorF end = eyePos + eyeVector;
-                        VectorF hitLocation = end;
-
-                        RayInfo rayInfo;
-                        if (gClientContainer.castRay(start, end, -1, &rayInfo) && rayInfo.object)
+                        if (mountedImage && !mountedImage->convergenceEnabled)
                         {
-                           hitLocation = rayInfo.point;
+                           MatrixF eyeMatrix;
+                           turret->getEyeTransform(&eyeMatrix);
+
+                           // Eye vector
+                           VectorF eyeVector;
+                           eyeMatrix.getColumn(1, &eyeVector);
+
+                           // Eye position
+                           VectorF eyePos;
+                           eyeMatrix.getColumn(3, &eyePos);
+
+                           // Make sure the eye vector covers the distance
+                           eyeVector *= mountedImage->operationalDistance;
+
+                           // Perform actual raycast
+                           VectorF start = eyePos;
+                           VectorF end = eyePos + eyeVector;
+                           VectorF hitLocation = end;
+
+                           RayInfo rayInfo;
+                           if (gClientContainer.castRay(start, end, -1, &rayInfo) && rayInfo.object)
+                           {
+                              hitLocation = rayInfo.point;
+                           }
+
+                           // Once we know the end location, transform it to screen space coordinates
+                           Point3F screenPosition;
+                           tsControl->project(hitLocation, &screenPosition);
+
+                           drawBitmapCentered(mBitmap, Point2I(screenPosition.x, screenPosition.y));
                         }
-
-                        // Once we know the end location, transform it to screen space coordinates
-                        Point3F screenPosition;
-                        tsControl->project(hitLocation, &screenPosition);
-
-                        drawBitmapCentered(mBitmap, Point2I(screenPosition.x, screenPosition.y));
                      }
                   }
                }

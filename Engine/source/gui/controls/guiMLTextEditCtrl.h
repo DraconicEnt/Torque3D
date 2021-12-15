@@ -37,6 +37,7 @@ class GuiMLTextEditCtrl : public GuiMLTextCtrl
 
    // Events
    bool onKeyDown(const GuiEvent&event);
+   void onMouseDown(const GuiEvent &event);
 
    // Event forwards
    void handleMoveKeys(const GuiEvent&);
