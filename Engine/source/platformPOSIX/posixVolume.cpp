@@ -23,12 +23,15 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "console/console.h"
+
 #include "core/crc.h"
 #include "core/frameAllocator.h"
 
 #include "core/util/str.h"
 #include "core/strings/stringFunctions.h"
 
+#include "platform/platform.h"
 #include "platform/platformVolume.h"
 #include "platformPOSIX/posixVolume.h"
 
@@ -595,22 +598,31 @@ String   Platform::FS::getAssetDir()
 /// file systems.
 bool Platform::FS::InstallFileSystems()
 {
-   Platform::FS::Mount( "/", Platform::FS::createNativeFS( String() ) );
+   StringTableEntry executablePath = Platform::getExecutablePath();
+   Platform::FS::SetCwd(executablePath);
 
-   // Setup the current working dir.
+   // BOL specific - Mount the data directory as home and then preferences as preferences
+   StringTableEntry dataDirectory = Platform::getUserDataDirectory();
+
    char buffer[PATH_MAX];
-   if (::getcwd(buffer,sizeof(buffer)))
+
+   dMemset(buffer, 0x00, PATH_MAX);
+   dMemcpy(buffer, dataDirectory, dStrlen(dataDirectory));
+
+   dStrcat(buffer, "/", PATH_MAX);
+   dStrcat(buffer, TORQUE_APP_NAME, PATH_MAX);
+
+   mkdir(buffer, 0777);
+   if (!Platform::FS::Mount( "data", Platform::FS::createNativeFS(buffer) ))
    {
-      // add trailing '/' if it isn't there
-      if (buffer[dStrlen(buffer) - 1] != '/')
-         dStrcat(buffer, "/", PATH_MAX);
-         
-      Platform::FS::SetCwd(buffer);
+      Con::errorf("Could not mount data!");
    }
-   
-   // Mount the home directory
-   if (char* home = getenv("HOME"))
-      Platform::FS::Mount( "home", Platform::FS::createNativeFS(home) );
+
+   // BOL specific - Mount the working directory as root
+   if (!Platform::FS::Mount( "/", Platform::FS::createNativeFS(executablePath) ))
+   {
+      Con::errorf("Could not mount application root!");
+   }
 
    return true;
 }
