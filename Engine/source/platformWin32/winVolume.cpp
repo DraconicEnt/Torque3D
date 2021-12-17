@@ -21,6 +21,9 @@
 //-----------------------------------------------------------------------------
 
 #include <windows.h>
+#include <direct.h>
+
+#include "console/console.h"
 
 #include "core/crc.h"
 #include "core/frameAllocator.h"
@@ -758,6 +761,37 @@ String   Platform::FS::getAssetDir()
 /// file systems.
 bool Platform::FS::InstallFileSystems()
 {
+#ifdef TORQUE_MDK
+   StringTableEntry executablePath = Platform::getExecutablePath();
+   Platform::FS::SetCwd(executablePath);
+
+   // BOL specific - Mount the data directory as home and then preferences as preferences
+   StringTableEntry dataDirectory = Platform::getUserDataDirectory();
+
+   char buffer[MAX_PATH];
+
+   dMemset(buffer, 0x00, MAX_PATH);
+   dMemcpy(buffer, dataDirectory, dStrlen(dataDirectory));
+
+   dStrcat(buffer, "/", MAX_PATH);
+   dStrcat(buffer, TORQUE_APP_NAME, MAX_PATH);
+
+   _mkdir(buffer);
+   if (!Platform::FS::Mount("data", Platform::FS::createNativeFS(buffer)))
+   {
+      Con::errorf("Could not mount data!");
+   }
+
+   // BOL specific - Mount the working directory as root with it read only but leave children alone
+   if (!Platform::FS::Mount("/", Platform::FS::createNativeFS(executablePath)))
+   {
+      Con::errorf("Could not mount application root!");
+   }
+
+   Torque::FS::FileSystemRef rootFS = Platform::FS::GetFileSystem("/");
+   Torque::FS::FileSystem::VFSMetaData& metaData = rootFS->getNodeVFSMetaData("/");
+   metaData.mReadOnly = true;
+#else
    WCHAR buffer[1024];
 
    // [8/24/2009 tomb] This stops Windows from complaining about drives that have no disks in
@@ -792,6 +826,7 @@ bool Platform::FS::InstallFileSystems()
    wd += '/';
 
    Platform::FS::SetCwd(wd);
+#endif
 
    return true;
 }

@@ -598,6 +598,7 @@ String   Platform::FS::getAssetDir()
 /// file systems.
 bool Platform::FS::InstallFileSystems()
 {
+#ifdef TORQUE_MDK
    StringTableEntry executablePath = Platform::getExecutablePath();
    Platform::FS::SetCwd(executablePath);
 
@@ -619,10 +620,32 @@ bool Platform::FS::InstallFileSystems()
    }
 
    // BOL specific - Mount the working directory as root
+   Torque::FS::FileSystemRef rootFS = Platform::FS::createNativeFS(executablePath);
    if (!Platform::FS::Mount( "/", Platform::FS::createNativeFS(executablePath) ))
    {
       Con::errorf("Could not mount application root!");
    }
+
+   Torque::FS::FileSystem::VFSMetaData& metaData = rootFS->getNodeVFSMetaData("/");
+   metaData.mReadOnly = true;
+#else
+   Platform::FS::Mount("/", Platform::FS::createNativeFS(String()));
+
+   // Setup the current working dir.
+   char buffer[PATH_MAX];
+   if (::getcwd(buffer, sizeof(buffer)))
+   {
+      // add trailing '/' if it isn't there
+      if (buffer[dStrlen(buffer) - 1] != '/')
+         dStrcat(buffer, "/", PATH_MAX);
+
+      Platform::FS::SetCwd(buffer);
+   }
+
+   // Mount the home directory
+   if (char* home = getenv("HOME"))
+      Platform::FS::Mount("home", Platform::FS::createNativeFS(home));
+#endif
 
    return true;
 }

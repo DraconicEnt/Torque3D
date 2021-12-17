@@ -250,6 +250,55 @@ FileSystem::~FileSystem()
    mChangeNotifier = NULL;
 }
 
+bool FileSystem::getNodeVFSReadOnly(const Path& path)
+{
+   VFSMetaData& const currentNode = getNodeVFSMetaData(path);
+   if (currentNode.mReadOnly)
+   {
+      return true;
+   }
+
+   // Lookup meta data up the tree until we hit root
+   Path workingPath = path;
+   workingPath.setFileName("");
+   workingPath.setExtension("");
+
+   bool isImmediateParentDirectory = true;
+   do
+   {
+      currentNode = getNodeVFSMetaData(workingPath);
+
+      if (currentNode.mReadOnly && (currentNode.mReadOnlyRecurse || isImmediateParentDirectory))
+      {
+         return true;
+      }
+
+      workingPath = Path(workingPath.getDirectory(workingPath.getDirectoryCount() - 1));
+      isImmediateParentDirectory = false;
+   } while (String::compare(workingPath.getFullPathWithoutRoot(), "") != 0);
+
+   return false;
+}
+
+FileSystem::VFSMetaData& FileSystem::getNodeVFSMetaData(const Path& path)
+{
+   String lookupPath = Path::CompressPath(path.getFullPathWithoutRoot());
+   lookupPath = String::ToLower(lookupPath);
+
+   auto search = mVFSMetaData.find(lookupPath);
+   if (search == mVFSMetaData.end())
+   {
+      mVFSMetaData[lookupPath] = VFSMetaData();
+   }
+
+   return mVFSMetaData[lookupPath];
+}
+
+FileSystem::VFSMetaData::VFSMetaData() : mReadOnly(false), mReadOnlyRecurse(false)
+{
+
+}
+
 File::File() {}
 File::~File() {}
 Directory::Directory() {}
@@ -536,6 +585,14 @@ DirectoryRef MountSystem::createDirectory(const Path& path, FileSystemRef fs)
 FileRef MountSystem::openFile(const Path& path,File::AccessMode mode)
 {
    FileNodeRef node = getFileNode(path);
+   FileSystemRef fileSystem = getFileSystem(path);
+
+   // If the path is read only and our mode is write, return NULL
+   if ((mode == File::AccessMode::ReadWrite || mode == File::AccessMode::Write || mode == File::AccessMode::WriteAppend) && fileSystem->getNodeVFSReadOnly(path))
+   {
+      return NULL;
+   }
+
    if (node != NULL)
    {
       FileRef file = dynamic_cast<File*>(node.getPointer());
@@ -873,6 +930,12 @@ bool MountSystem::createPath(const Path& path)
    
    if (isDirectory(dir,fsRef))
       return true;
+
+   // If the requested node is read only, return an error immediately
+   if (fsRef->getNodeVFSReadOnly(path))
+   {
+      return false;
+   }
    
    // Start from the top and work our way down
    Path sub;

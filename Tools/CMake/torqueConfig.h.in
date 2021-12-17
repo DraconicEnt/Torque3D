@@ -65,6 +65,9 @@
 /// Define me if you want to disable the virtual mount system.
 #cmakedefine TORQUE_DISABLE_VIRTUAL_MOUNT_SYSTEM
 
+/// Define me if this is a MDK build
+#cmakedefine TORQUE_MDK
+
 /// Define me if you want to disable looking for the root of a given path
 /// within a zip file.  This means that the zip file name itself must be
 /// the root of the path.  Requires the virtual mount system to be active.

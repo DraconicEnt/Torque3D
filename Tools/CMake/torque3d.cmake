@@ -169,6 +169,8 @@ if(NOT MSVC AND NOT APPLE) # handle single-configuration generator
     mark_as_advanced(TORQUE_ADDITIONAL_LINKER_FLAGS)
 endif()
 
+option(TORQUE_MDK "MDK build." OFF)
+
 option(TORQUE_MULTITHREAD "Multi Threading" ON)
 mark_as_advanced(TORQUE_MULTITHREAD)
 

@@ -43,10 +43,16 @@ bool  MountDefaults()
 {
    String  path = getAssetDir();
 
-   bool  mounted = Mount( "game", createNativeFS( path ));
+   Torque::FileSystemRef gameFS = createNativeFS(path);
+   bool  mounted = Mount( "game", gameFS);
 
    if ( !mounted )
       return false;
+
+#ifdef TORQUE_MDK
+   Torque::FS::FileSystem::VFSMetaData& metaData = gameFS->getNodeVFSMetaData("/");
+   metaData.mReadOnly = true;
+#endif
 
 #ifndef TORQUE_DISABLE_VIRTUAL_MOUNT_SYSTEM
    // Note that the VirtualMountSystem must be enabled in volume.cpp for zip support to work.

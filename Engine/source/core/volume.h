@@ -296,6 +296,17 @@ protected:
 class FileSystem : public FileBase
 {
 public:
+   struct VFSMetaData
+   {
+      //! Virtual read only flag.
+      bool mReadOnly;
+
+      //! Whether or not the read only flag is recursive. Only applies to directories.
+      bool mReadOnlyRecurse;
+
+      VFSMetaData();
+   };
+
    FileSystem();
    virtual ~FileSystem();
 
@@ -309,6 +320,9 @@ public:
    virtual Path mapTo(const Path& path) = 0;
    virtual Path mapFrom(const Path& path) = 0;
 
+   bool getNodeVFSReadOnly(const Path& path);
+   VFSMetaData& getNodeVFSMetaData(const Path& path);
+
    /// Returns the file change notifier.
    /// @see FS::AddChangeNotification
    /// @see FS::RemoveChangeNotification
@@ -317,6 +331,9 @@ public:
    bool isReadOnly() { return mReadOnly; }
 
 protected:
+   //! A mapping of paths to their VFS meta data.
+   HashMap<String, VFSMetaData> mVFSMetaData;
+
    FileSystemChangeNotifier   *mChangeNotifier;
    bool mReadOnly;
 };
