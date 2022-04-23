@@ -345,6 +345,46 @@ void TerrainConvex::getPolyList(AbstractPolyList* list)
 
 
 //----------------------------------------------------------------------------
+#include <chrono>
+#include <iostream>
+
+void TerrainBlock::_buildCollision()
+{
+   // FIXME: Reset this flag if deformation or some such occurs
+   if (!mBuiltCollision)
+   {
+      mBuiltCollision = true;
+
+      // Clear any existing entries
+      for (auto iterator = mCollisionMap.begin(); iterator != mCollisionMap.end(); ++iterator)
+      {
+         delete *iterator;
+      }
+
+      // Build our convexes in RAM
+      for (U32 x = 0; x < mFile->mSize; ++x)
+      {
+         for (U32 y = 0; y < mFile->mSize; ++y)
+         {
+            const TerrainSquare* square = mFile->findSquare(0, x, y);
+
+            TerrainConvex* collisionPoint = new TerrainConvex;
+            collisionPoint->halfA = true;
+            collisionPoint->square = 0;
+            collisionPoint->mObject = this;
+            collisionPoint->material = mFile->getLayerIndex(x, y);
+
+            collisionPoint->box.minExtents.set((F32)(x * mSquareSize), (F32)(y * mSquareSize), fixedToFloat(square->minHeight));
+            collisionPoint->box.maxExtents.x = collisionPoint->box.minExtents.x + mSquareSize;
+            collisionPoint->box.maxExtents.y = collisionPoint->box.minExtents.y + mSquareSize;
+            collisionPoint->box.maxExtents.z = fixedToFloat(square->maxHeight);
+            mObjToWorld.mul(collisionPoint->box);
+
+            mCollisionMap.push_back(collisionPoint);
+         }
+      }
+   }
+}
 
 void TerrainBlock::buildConvex(const Box3F& box,Convex* convex)
 {
@@ -378,6 +418,17 @@ void TerrainBlock::buildConvex(const Box3F& box,Convex* convex)
 
    const U32 BlockMask = mFile->mSize - 1;
 
+   // Before we do anything else, build our our collision (possibly) and sanitize inputs to avoid needless spinning
+   yStart = yStart < 0 ? 0 : yStart;
+   yStart = yStart >= mFile->mSize ? mFile->mSize : yStart;
+   xStart = xStart < 0 ? 0 : xStart;
+   xStart = xStart >= mFile->mSize ? mFile->mSize : xStart;
+
+   yEnd = yEnd < 0 ? 0 : yEnd;
+   yEnd = yEnd >= mFile->mSize ? mFile->mSize : yEnd;
+   xEnd = xEnd < 0 ? 0 : xEnd;
+   xEnd = xEnd >= mFile->mSize ? mFile->mSize : xEnd;
+
    for ( S32 y = yStart; y < yEnd; y++ ) 
    {
       S32 yi = y & BlockMask;
@@ -387,6 +438,16 @@ void TerrainBlock::buildConvex(const Box3F& box,Convex* convex)
       {
          S32 xi = x & BlockMask;
 
+         // Load the existing terrain collision
+         TerrainConvex* terrainConvex = findConvex(xi, yi);
+
+         // No such convex
+         if (!terrainConvex)
+         {
+            continue;
+         }
+
+         /*
          const TerrainSquare *sq = mFile->findSquare( 0, xi, yi );
 
          if ( x != xi || y != yi )
@@ -397,39 +458,15 @@ void TerrainBlock::buildConvex(const Box3F& box,Convex* convex)
                sq->minHeight > heightMax || 
                sq->maxHeight < heightMin )
             continue;
+         */
 
          U32 sid = (x << 16) + (y & ((1 << 16) - 1));
-         Convex *cc = 0;
 
-         // See if the square already exists as part of the working set.
-         CollisionWorkingList& wl = convex->getWorkingList();
-         for (CollisionWorkingList* itr = wl.wLink.mNext; itr != &wl; itr = itr->wLink.mNext)
-            if (itr->mConvex->getType() == TerrainConvexType &&
-                static_cast<TerrainConvex*>(itr->mConvex)->squareId == sid) {
-               cc = itr->mConvex;
-               break;
-            }
+         convex->addToWorkingList(terrainConvex);
 
-         if (cc)
-            continue;
-
-         // Create a new convex.
-         TerrainConvex* cp = new TerrainConvex;
-         sTerrainConvexList.registerObject(cp);
-         convex->addToWorkingList(cp);
-         cp->halfA = true;
-         cp->square = 0;
-         cp->mObject = this;
-         cp->squareId = sid;
-         cp->material = mFile->getLayerIndex( xi, yi );
-         cp->box.minExtents.set((F32)(x * mSquareSize), (F32)(y * mSquareSize), fixedToFloat( sq->minHeight ));
-         cp->box.maxExtents.x = cp->box.minExtents.x + mSquareSize;
-         cp->box.maxExtents.y = cp->box.minExtents.y + mSquareSize;
-         cp->box.maxExtents.z = fixedToFloat( sq->maxHeight );
-         mObjToWorld.mul(cp->box);
 
          // Build points
-         Point3F* pos = cp->point;
+         Point3F* pos = terrainConvex->point;
          for (S32 i = 0; i < 4 ; i++,pos++) {
             S32 dx = i >> 1;
             S32 dy = dx ^ (i & 1);
@@ -440,34 +477,37 @@ void TerrainBlock::buildConvex(const Box3F& box,Convex* convex)
 
          // Build normals, then split into two Convex objects if the
          // square is concave
-         if ((cp->split45 = sq->flags & TerrainSquare::Split45) == true) {
-            VectorF *vp = cp->point;
-            mCross(vp[0] - vp[1],vp[2] - vp[1],&cp->normal[0]);
-            cp->normal[0].normalize();
-            mCross(vp[2] - vp[3],vp[0] - vp[3],&cp->normal[1]);
-            cp->normal[1].normalize();
-            if (mDot(vp[3] - vp[1],cp->normal[0]) > 0) {
-               TerrainConvex* nc = new TerrainConvex(*cp);
+         const TerrainSquare* square = mFile->findSquare(0, x, y);
+
+
+         if ((terrainConvex->split45 = square->flags & TerrainSquare::Split45) == true) {
+            VectorF *vp = terrainConvex->point;
+            mCross(vp[0] - vp[1],vp[2] - vp[1],&terrainConvex->normal[0]);
+            terrainConvex->normal[0].normalize();
+            mCross(vp[2] - vp[3],vp[0] - vp[3],&terrainConvex->normal[1]);
+            terrainConvex->normal[1].normalize();
+            if (mDot(vp[3] - vp[1], terrainConvex->normal[0]) > 0) {
+               TerrainConvex* nc = new TerrainConvex(*terrainConvex);
                sTerrainConvexList.registerObject(nc);
                convex->addToWorkingList(nc);
                nc->halfA = false;
-               nc->square = cp;
-               cp->square = nc;
+               nc->square = terrainConvex;
+               terrainConvex->square = nc;
             }
          }
          else {
-            VectorF *vp = cp->point;
-            mCross(vp[3] - vp[0],vp[1] - vp[0],&cp->normal[0]);
-            cp->normal[0].normalize();
-            mCross(vp[1] - vp[2],vp[3] - vp[2],&cp->normal[1]);
-            cp->normal[1].normalize();
-            if (mDot(vp[2] - vp[0],cp->normal[0]) > 0) {
-               TerrainConvex* nc = new TerrainConvex(*cp);
+            VectorF *vp = terrainConvex->point;
+            mCross(vp[3] - vp[0],vp[1] - vp[0],&terrainConvex->normal[0]);
+            terrainConvex->normal[0].normalize();
+            mCross(vp[1] - vp[2],vp[3] - vp[2],&terrainConvex->normal[1]);
+            terrainConvex->normal[1].normalize();
+            if (mDot(vp[2] - vp[0], terrainConvex->normal[0]) > 0) {
+               TerrainConvex* nc = new TerrainConvex(*terrainConvex);
                sTerrainConvexList.registerObject(nc);
                convex->addToWorkingList(nc);
                nc->halfA = false;
-               nc->square = cp;
-               cp->square = nc;
+               nc->square = terrainConvex;
+               terrainConvex->square = nc;
             }
          }
       }

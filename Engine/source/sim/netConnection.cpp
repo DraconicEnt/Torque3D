@@ -314,8 +314,8 @@ void NetConnection::checkMaxRate()
 
    if (isLocalConnection())
    {
-      packetRateToServer = 128;
-      packetRateToClient = 128;
+      packetRateToServer = 1024;
+      packetRateToClient = 1024;
       // These changes introduced in T3D 1.1 Preview reduce the packet headroom which leads
       // to some spells and effects running out of room when dynamic variables are used
       // to send launch-time parameters to clients.

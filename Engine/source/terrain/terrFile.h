@@ -97,7 +97,7 @@ protected:
    /// The grid map layers used to accelerate collision
    /// queries for the height map data.
    Vector<TerrainSquare*> mGridMap;
-   
+
    /// MaterialList used to map terrain materials to material instances for the
    /// sake of collision (physics, etc.).
    MaterialList mMaterialInstMapping;

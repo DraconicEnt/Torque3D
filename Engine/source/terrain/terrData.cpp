@@ -205,6 +205,7 @@ TerrainBlock::TerrainBlock()
    mScreenError( 16 ),
    mCastShadows( true ),
    mZoningDirty( false ),
+   mBuiltCollision( false ),
    mUpdateBasetex ( true ),
    mDetailTextureArray( NULL ),
    mMacroTextureArray( NULL ),

@@ -55,7 +55,11 @@
 #endif 
 #ifndef TERRAINASSET_H
 #include "T3D/assets/TerrainAsset.h"
-#endif 
+#endif
+
+#ifndef _TERRCOLL_H_
+#include "terrain/terrCollision.h"
+#endif
 
 class GBitmap;
 class TerrainBlock;
@@ -199,6 +203,9 @@ protected:
    /// @see _renderDebug
    Vector<TerrCell*> mDebugCells;
 
+   /// The collision mapping.
+   Vector<TerrainConvex*> mCollisionMap;
+
    /// Set to enable debug rendering of the terrain.  It
    /// is exposed to the console via $terrain::debugRender.
    static bool smDebugRender;
@@ -213,6 +220,8 @@ protected:
    /// A global detail scale used to tweak the 
    /// material detail distances.
    static F32 smDetailScale;
+
+   bool mBuiltCollision;
 
    /// True if the zoning needs to be recalculated for the terrain.
    bool mZoningDirty;
@@ -252,6 +261,8 @@ protected:
 
    void _updateZoning();
 
+   void _buildCollision();
+
    // Protected fields
    static bool _setTerrainFile( void *obj, const char *index, const char *data );
    static bool _setTerrainAsset(void* obj, const char* index, const char* data);
@@ -271,6 +282,8 @@ public:
    };
 
    static Signal<void(U32,TerrainBlock*,const Point2I& ,const Point2I&)> smUpdateSignal;
+
+   TerrainConvex* findConvex(U32 x, U32 y);
 
    ///
    bool import(   const GBitmap &heightMap, 
@@ -543,5 +556,17 @@ protected:
 public:
    const U16* getZodiacPrimitiveBuffer();
 };
+
+inline TerrainConvex* TerrainBlock::findConvex(U32 x, U32 y)
+{
+   _buildCollision();
+   
+   x %= mFile->mSize;
+   y %= mFile->mSize;
+   x >>= 0;
+   y >>= 0;
+
+   return mCollisionMap[x + y];
+}
 
 #endif // _TERRDATA_H_
