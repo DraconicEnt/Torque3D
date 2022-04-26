@@ -60,11 +60,11 @@ extern StringTableEntry assetAuthorURLField;
 //#define ASSET_BASE_AUTOUNLOAD_FIELD        "AssetAutoUnload"
 
 //-----------------------------------------------------------------------------
-class AssetBase : public SimObject
+class AssetBase : public SimGroup
 {
    friend class AssetManager;
 
-   typedef SimObject Parent;
+   typedef SimGroup Parent;
 
 protected:
    AssetManager*           mpOwningAssetManager;
