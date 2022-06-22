@@ -221,8 +221,7 @@ StringTableEntry ImageAsset::getAssetIdByFilename(StringTableEntry fileName)
    }
    else
    {
-      AssetPtr<ImageAsset> imageAsset = imageAssetId;
-      imageAsset->mLoadedState = AssetErrCode::BadFileReference;
+      AssetPtr<ImageAsset> imageAsset = imageAssetId; //ensures the fallback is loaded
    }
 
    return imageAssetId;
@@ -449,7 +448,6 @@ DefineEngineStaticMethod(ImageAsset, getAssetIdByFilename, const char*, (const c
 {
    return ImageAsset::getAssetIdByFilename(StringTable->insert(filePath));
 }
-#endif
 
 //-----------------------------------------------------------------------------
 // GuiInspectorTypeAssetId
@@ -621,3 +619,5 @@ void GuiInspectorTypeImageAssetId::consoleInit()
 
    ConsoleBaseType::getType(TypeImageAssetId)->setInspectorFieldType("GuiInspectorTypeImageAssetId");
 }
+
+#endif

@@ -652,6 +652,7 @@ void ExplosionData::packData(BitStream* stream)
 
    PACKDATA_ASSET(ExplosionShape);
 
+   //PACKDATA_SOUNDASSET(Sound);
    PACKDATA_ASSET(Sound);
 
    if (stream->writeFlag(particleEmitter))

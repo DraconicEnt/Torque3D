@@ -117,7 +117,7 @@ ConsoleSetType(TypeShapeAssetId)
 
 //-----------------------------------------------------------------------------
 
-const String ShapeAsset::mErrCodeStrings[] =
+const String ShapeAsset::mShapeErrCodeStrings[] =
 {
    "TooManyVerts",
    "TooManyBones",
@@ -475,8 +475,7 @@ StringTableEntry ShapeAsset::getAssetIdByFilename(StringTableEntry fileName)
    }
    else
    {
-      AssetPtr<ShapeAsset> shapeAsset = shapeAssetId;
-      shapeAsset->mLoadedState = AssetErrCode::BadFileReference;
+      AssetPtr<ShapeAsset> shapeAsset = shapeAssetId; //ensures the fallback is loaded
    }
 
    return shapeAssetId;
@@ -721,11 +720,11 @@ DefineEngineStaticMethod(ShapeAsset, getAssetIdByFilename, const char*, (const c
 }
 #endif
 
+#ifdef TORQUE_TOOLS
 //-----------------------------------------------------------------------------
 // GuiInspectorTypeAssetId
 //-----------------------------------------------------------------------------
 
-#ifdef TORQUE_TOOLS
 IMPLEMENT_CONOBJECT(GuiInspectorTypeShapeAssetPtr);
 
 ConsoleDocClass(GuiInspectorTypeShapeAssetPtr,

@@ -419,6 +419,8 @@ bool TSStatic::_createShape()
       // Reapply the current skin
       mAppliedSkinName = "";
       reSkin();
+
+      updateMaterials();
    }
 
    prepCollision();
@@ -1619,8 +1621,6 @@ void TSStatic::updateMaterials()
       }
    }
 
-   mChangingMaterials.clear();
-
    // Initialize the material instances
    mShapeInstance->initMaterialList();
 }
@@ -1635,7 +1635,7 @@ void TSStatic::getUtilizedAssets(Vector<StringTableEntry>* usedAssetsList)
 //These functions are duplicated in tsStatic and shapeBase.
 //They each function a little differently; but achieve the same purpose of gathering
 //target names/counts without polluting simObject.
-
+#ifdef TORQUE_TOOLS
 void TSStatic::onInspect(GuiInspector* inspector)
 {
    if (mShapeAsset == nullptr)
@@ -1716,7 +1716,7 @@ void TSStatic::onInspect(GuiInspector* inspector)
       }
    }
 }
-
+#endif
 DefineEngineMethod(TSStatic, getTargetName, const char*, (S32 index), (0),
    "Get the name of the indexed shape material.\n"
    "@param index index of the material to get (valid range is 0 - getTargetCount()-1).\n"

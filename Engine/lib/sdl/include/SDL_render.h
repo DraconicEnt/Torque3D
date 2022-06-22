@@ -262,6 +262,17 @@ extern DECLSPEC SDL_Renderer * SDLCALL SDL_CreateSoftwareRenderer(SDL_Surface * 
 extern DECLSPEC SDL_Renderer * SDLCALL SDL_GetRenderer(SDL_Window * window);
 
 /**
+ * Get the window associated with a renderer.
+ *
+ * \param renderer the renderer to query
+ * \returns the window on success or NULL on failure; call SDL_GetError() for
+ *          more information.
+ *
+ * \since This function is available since SDL 2.0.22.
+ */
+extern DECLSPEC SDL_Window * SDLCALL SDL_RenderGetWindow(SDL_Renderer *renderer);
+
+/**
  * Get information about a rendering context.
  *
  * \param renderer the rendering context
@@ -814,9 +825,13 @@ extern DECLSPEC int SDLCALL SDL_RenderSetLogicalSize(SDL_Renderer * renderer, in
 /**
  * Get device independent resolution for rendering.
  *
- * This may return 0 for `w` and `h` if the SDL_Renderer has never had its
- * logical size set by SDL_RenderSetLogicalSize() and never had a render
- * target set.
+ * When using the main rendering target (eg no target texture is set): this
+ * may return 0 for `w` and `h` if the SDL_Renderer has never had its logical
+ * size set by SDL_RenderSetLogicalSize(). Otherwise it returns the logical
+ * width and height.
+ *
+ * When using a target texture: Never return 0 for `w` and `h` at first. Then
+ * it returns the logical width and height that are set.
  *
  * \param renderer a rendering context
  * \param w an int to be filled with the width
@@ -1607,6 +1622,7 @@ extern DECLSPEC int SDLCALL SDL_RenderCopyExF(SDL_Renderer * renderer,
  * vertex array Color and alpha modulation is done per vertex
  * (SDL_SetTextureColorMod and SDL_SetTextureAlphaMod are ignored).
  *
+ * \param renderer The rendering context.
  * \param texture (optional) The SDL texture to use.
  * \param vertices Vertices.
  * \param num_vertices Number of vertices.
@@ -1631,6 +1647,7 @@ extern DECLSPEC int SDLCALL SDL_RenderGeometry(SDL_Renderer *renderer,
  * vertex arrays Color and alpha modulation is done per vertex
  * (SDL_SetTextureColorMod and SDL_SetTextureAlphaMod are ignored).
  *
+ * \param renderer The rendering context.
  * \param texture (optional) The SDL texture to use.
  * \param xy Vertex positions
  * \param xy_stride Byte size to move from one element to the next element

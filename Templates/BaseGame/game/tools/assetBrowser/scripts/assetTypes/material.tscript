@@ -16,6 +16,7 @@ function AssetBrowser::createMaterialAsset(%this)
       materialDefinitionName = %assetName;
       
       new Material(%assetName) {
+         mapTo = %assetName;
       };
    };
    
@@ -530,7 +531,7 @@ function AssetBrowser::generateMaterialAssetPreviewImage(%this, %previewButton, 
          }
       }
       
-         %previewButton.bitmapAsset = %previewAssetName;
+         %previewButton.bitmapAsset = "ToolsModule:" @ %previewAssetName;
          return true;
    }
    }
