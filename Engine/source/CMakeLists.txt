@@ -179,7 +179,7 @@ torqueAddSourceDirectories("forest" "forest/ts")
 torqueAddSourceDirectories("shaderGen")
 
 # Handle BOL
-torqueAddSourceDirectories("BOL" "BOL/game")
+torqueAddSourceDirectories("BOL")
 
 if (WIN32 AND TORQUE_D3D11)
   torqueAddSourceDirectories("shaderGen/HLSL")
