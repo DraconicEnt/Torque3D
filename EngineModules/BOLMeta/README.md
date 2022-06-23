@@ -1,14 +1,3 @@
-# New GUI Elements
+# BOL Meta Data
 
-This module adds several GUI elements, all of which are in various states of unfinished.
-
-The following are added (these can be found under the "Extended" category in the asset browser):
-
-```
-GUICommanderHUD
-GUIRadarChartCtrl
-GUIReticleCtrl
-GUISpinningCompassCtrl
-GUITypingTextCtrl
-GUIVNDialogCtrl
-```
+This module adds additional meta data object types specific to BOL but some are also used by eg. New UI Elements.
