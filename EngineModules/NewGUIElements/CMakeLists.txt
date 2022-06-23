@@ -1,0 +1,11 @@
+# New GUI Elements module
+option(TORQUE_NEW_GUI_ELEMENTS "Enable New GUI Elements module" ON)
+
+if (TORQUE_NEW_GUI_ELEMENTS)
+  message("Enabling New GUI Elements Module")
+
+  # Add binding sources to our compile set
+  file(GLOB TORQUE_NEW_GUI_ELEMENTS_SOURCES "Source/*.cpp")
+  set(TORQUE_SOURCE_FILES ${TORQUE_SOURCE_FILES} ${TORQUE_NEW_GUI_ELEMENTS_SOURCES} PARENT_SCOPE)
+  set(TORQUE_INCLUDE_DIRECTORIES ${TORQUE_INCLUDE_DIRECTORIES} "${CMAKE_CURRENT_SOURCE_DIR}/Source" PARENT_SCOPE)
+endif(TORQUE_NEW_GUI_ELEMENTS)
